@@ -1,4 +1,5 @@
 import db from '@/api/_lib/db';
+import { LEVEL_OPTIONS, TRACK_OPTIONS, parseTrackLabels } from '@/app/lib/courseMeta';
 import Link from 'next/link';
 import AdminShell from '../../_components/AdminShell';
 import { addLessonToCourse, deleteLesson, updateCourseDetails, addModuleToCourse } from '../actions';
@@ -49,6 +50,9 @@ export default async function AdminCourseDetails({ params }) {
     return <AdminShell><div style={{ padding: '40px' }}>Course not found: {courseId}</div></AdminShell>;
   }
 
+  const courseTrackLabels = parseTrackLabels(course?.track_label_zh).join(', ');
+  const courseDurationHours = Number.parseInt(course?.duration_label, 10);
+
   // Group lessons by module_sort_order
   const groupedLessons = {};
   
@@ -88,12 +92,36 @@ export default async function AdminCourseDetails({ params }) {
                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Title (zh-TW)</label>
                <input name="title" defaultValue={course.title} required style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
             </div>
+            <div style={{ flex: '1 1 220px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+               <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Track Category</label>
+               <select name="trackKey" defaultValue={course.track_key} style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px', backgroundColor: 'white' }}>
+                  {TRACK_OPTIONS.map((option) => (
+                    <option key={option.key} value={option.key}>{option.labelZh}</option>
+                  ))}
+               </select>
+            </div>
+            <div style={{ flex: '1 1 140px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+               <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Level</label>
+               <select name="levelKey" defaultValue={course.level_key} style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px', backgroundColor: 'white' }}>
+                  {LEVEL_OPTIONS.map((level) => (
+                    <option key={level} value={level}>{level}</option>
+                  ))}
+               </select>
+            </div>
             <div style={{ flex: '1 1 150px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Status</label>
                <select name="status" defaultValue={course.status} style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px' }}>
                   <option value="draft">Draft</option>
                   <option value="published">Published</option>
                </select>
+            </div>
+            <div style={{ flex: '1 1 220px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+               <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>課程 Hashtags</label>
+               <input name="trackLabels" defaultValue={courseTrackLabels} placeholder="核心華語, 初級, 口說訓練" style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+            </div>
+            <div style={{ flex: '1 1 140px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+               <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Hours</label>
+               <input name="durationHours" type="number" min="1" defaultValue={Number.isFinite(courseDurationHours) ? courseDurationHours : 40} style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
             </div>
             <div style={{ flex: '1 1 100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Description (zh-TW)</label>

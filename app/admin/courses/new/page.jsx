@@ -3,12 +3,15 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { createCourse } from '../actions';
+import { TRACK_OPTIONS, LEVEL_OPTIONS } from '@/app/lib/courseMeta';
 import Link from 'next/link';
 
 export default function NewCoursePage() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState(null);
+  const [trackKey, setTrackKey] = useState(TRACK_OPTIONS[0].key);
+  const [trackLabels, setTrackLabels] = useState(TRACK_OPTIONS[0].labelZh);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -58,20 +61,54 @@ export default function NewCoursePage() {
           <div style={{ display: 'flex', gap: '24px' }}>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>Track Category</label>
-              <select name="trackKey" required style={{ padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', width: '100%', backgroundColor: 'white' }}>
-                <option value="ai-fundamentals">AI Fundamentals</option>
-                <option value="data-engineering">Data Engineering</option>
-                <option value="career-development">Career Path</option>
+              <select
+                name="trackKey"
+                required
+                value={trackKey}
+                onChange={(event) => {
+                  const nextTrackKey = event.target.value;
+                  const nextOption = TRACK_OPTIONS.find((option) => option.key === nextTrackKey);
+                  setTrackKey(nextTrackKey);
+                  if (nextOption) {
+                    setTrackLabels(nextOption.labelZh);
+                  }
+                }}
+                style={{ padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', width: '100%', backgroundColor: 'white' }}
+              >
+                {TRACK_OPTIONS.map((option) => (
+                  <option key={option.key} value={option.key}>{option.labelZh}</option>
+                ))}
               </select>
             </div>
             
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>Level</label>
               <select name="levelKey" required style={{ padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', width: '100%', backgroundColor: 'white' }}>
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
+                {LEVEL_OPTIONS.map((level) => (
+                  <option key={level} value={level}>{level}</option>
+                ))}
               </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+            <div style={{ flex: '1 1 380px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>課程 Hashtags</label>
+              <input
+                name="trackLabels"
+                type="text"
+                value={trackLabels}
+                onChange={(event) => setTrackLabels(event.target.value)}
+                placeholder="例如：核心華語, 口說訓練, 初級"
+                style={{ padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', width: '100%' }}
+              />
+              <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>可輸入多個標籤，使用逗號分隔，前台會顯示成多個藍色小字卡。</span>
+            </div>
+
+            <div style={{ flex: '0 0 180px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>總時數</label>
+              <input name="durationHours" required min="1" type="number" defaultValue="40" placeholder="40" style={{ padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', width: '100%' }} />
+              <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>前台會顯示成 `40 hours`。</span>
             </div>
           </div>
 

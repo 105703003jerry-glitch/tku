@@ -2,6 +2,7 @@
 
 import db from '@/api/_lib/db';
 import { getAuthUser } from '@/app/lib/authSession';
+import { buildTrackMetadata, formatDurationLabel } from '@/app/lib/courseMeta';
 import { revalidatePath } from 'next/cache';
 
 // Verify Admin Role before execution
@@ -21,15 +22,12 @@ export async function createCourse(formData) {
     const title = formData.get('title');
     const description = formData.get('description');
     const trackKey = formData.get('trackKey');
+    const trackLabels = formData.get('trackLabels');
     const levelKey = formData.get('levelKey');
+    const durationHours = formData.get('durationHours');
     const summary = description;
-    const trackLabelZh = trackKey === 'ai-fundamentals'
-      ? 'AI Fundamentals'
-      : trackKey === 'data-engineering'
-        ? 'Data Engineering'
-        : 'Career Path';
-    const trackLabelEn = trackLabelZh;
-    const durationLabel = 'Self-paced';
+    const trackMeta = buildTrackMetadata(trackKey, trackLabels);
+    const durationLabel = formatDurationLabel(durationHours);
     const instructorName = 'TKU Team';
     const formatLabel = 'Video lessons';
     const audienceLabel = 'All learners';
@@ -49,9 +47,9 @@ export async function createCourse(formData) {
       )
       VALUES (
         ${id},
-        ${trackKey},
-        ${trackLabelZh},
-        ${trackLabelEn},
+        ${trackMeta.trackKey},
+        ${trackMeta.trackLabelZh},
+        ${trackMeta.trackLabelEn},
         ${levelKey},
         ${durationLabel},
         ${instructorName},
@@ -183,13 +181,26 @@ export async function updateCourseDetails(formData) {
     const title = formData.get('title');
     const description = formData.get('description');
     const status = formData.get('status');
+    const trackKey = formData.get('trackKey');
+    const trackLabels = formData.get('trackLabels');
+    const levelKey = formData.get('levelKey');
+    const durationHours = formData.get('durationHours');
+    const trackMeta = buildTrackMetadata(trackKey, trackLabels);
+    const durationLabel = formatDurationLabel(durationHours);
     
     if (!id || !title) throw new Error("Missing required fields");
     
     // Update courses table
     await sql`
       UPDATE courses 
-      SET status = ${status}, updated_at = NOW() 
+      SET
+        track_key = ${trackMeta.trackKey},
+        track_label_zh = ${trackMeta.trackLabelZh},
+        track_label_en = ${trackMeta.trackLabelEn},
+        level_key = ${levelKey},
+        duration_label = ${durationLabel},
+        status = ${status},
+        updated_at = NOW()
       WHERE id = ${id}
     `;
     

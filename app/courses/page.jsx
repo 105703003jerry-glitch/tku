@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 // Use the existing DB logic
 import db from '@/api/_lib/db';
+import { parseTrackLabels } from '@/app/lib/courseMeta';
 import courseStore from '@/api/_lib/courseStore';
 
 export const dynamic = 'force-dynamic';
@@ -59,8 +60,12 @@ export default async function CoursesPage() {
               }} 
             />
             <div style={{ padding: '24px' }}>
-              <div style={{ display: 'inline-block', backgroundColor: 'var(--brand-secondary)', color: 'var(--brand-primary)', fontSize: '0.75rem', fontWeight: 600, padding: '4px 8px', borderRadius: '4px', marginBottom: '12px' }}>
-                {course.trackLabel?.['zh-TW'] || course.track}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+                {parseTrackLabels(course.trackLabel?.['zh-TW'] || course.track).map((label) => (
+                  <div key={`${course.id}-${label}`} style={{ display: 'inline-block', backgroundColor: 'var(--brand-secondary)', color: 'var(--brand-primary)', fontSize: '0.75rem', fontWeight: 600, padding: '4px 8px', borderRadius: '4px' }}>
+                    {label}
+                  </div>
+                ))}
               </div>
               <h3 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '8px' }}>{course.title?.['zh-TW'] || 'Untitled'}</h3>
               <div style={{ display: 'flex', gap: '16px', color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '24px' }}>
