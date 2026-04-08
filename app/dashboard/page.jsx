@@ -5,6 +5,7 @@ import { getAuthUser } from '../lib/authSession';
 import { getCourseCoverImage } from '../lib/courseCover';
 import { listUserCourseProgress } from '../lib/learningProgress';
 import { performLogout } from '../login/actions';
+import DashboardProgressClient from './DashboardProgressClient';
 
 export default async function Dashboard() {
   let user = await getAuthUser();
@@ -40,7 +41,7 @@ export default async function Dashboard() {
           const trackName = courseData?.trackLabel?.['zh-TW'] || trackKey;
           
           if (!topicsMap[trackKey]) {
-             topicsMap[trackKey] = { name: trackName, totalProgress: 0, courseCount: 0 };
+             topicsMap[trackKey] = { key: trackKey, name: trackName, totalProgress: 0, courseCount: 0 };
           }
           topicsMap[trackKey].totalProgress += (enr.progressPercent || 0);
           topicsMap[trackKey].courseCount += 1;
@@ -48,6 +49,8 @@ export default async function Dashboard() {
           return {
             id: enr.courseId,
             title: courseData?.title?.['zh-TW'] || enr.courseId,
+            trackKey,
+            trackName,
             coverImageUrl: courseData ? getCourseCoverImage(courseData) : '/assets/course_thumb_ai.png',
             progress: enr.progressPercent || 0,
             lastAccessed: enr.lastActivityAt ? new Date(enr.lastActivityAt).toLocaleDateString() : 'Recently'
@@ -56,6 +59,7 @@ export default async function Dashboard() {
         
         // Calculate the aggregate topic progress percentages
         topicProgress = Object.values(topicsMap).map(t => ({
+           key: t.key,
            name: t.name,
            overallPercentage: Math.round(t.totalProgress / t.courseCount),
            courseCount: t.courseCount
@@ -133,61 +137,7 @@ export default async function Dashboard() {
           <p style={{ color: 'var(--text-secondary)' }}>You are on a 3-day learning streak. Keep it up!</p>
         </header>
 
-        {topicProgress.length > 0 && (
-          <section style={{ marginBottom: '48px' }}>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 600, marginBottom: '24px' }}>Topic Progress (Themes)</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px' }}>
-              {topicProgress.map((topic, idx) => (
-                <div key={idx} className="card" style={{ padding: '24px', borderLeft: '4px solid var(--brand-primary)' }}>
-                   <div style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{topic.courseCount} Courses Enrolled</div>
-                   <h3 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '16px' }}>{topic.name}</h3>
-                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                      <div style={{ flex: 1, height: '8px', backgroundColor: 'var(--border-light)', borderRadius: '4px', overflow: 'hidden' }}>
-                        <div style={{ width: `${topic.overallPercentage}%`, height: '100%', backgroundColor: 'var(--brand-primary)', borderRadius: '4px' }}></div>
-                      </div>
-                      <span style={{ fontWeight: 600, color: 'var(--brand-primary)' }}>{topic.overallPercentage}%</span>
-                   </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section style={{ marginBottom: '48px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 600 }}>In Progress Courses</h2>
-            <Link href="/courses" style={{ color: 'var(--brand-primary)', fontWeight: 500, fontSize: '0.9rem' }}>Browse more</Link>
-          </div>
-          
-          {enrolledCourses.length === 0 ? (
-            <div className="card" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-              <p style={{ marginBottom: '16px' }}>You haven't enrolled in any courses yet.</p>
-              <Link href="/courses" className="btn-primary">Explore Courses</Link>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '24px' }}>
-              {enrolledCourses.map(course => (
-                <div key={course.id} className="card" style={{ padding: '24px' }}>
-                  <div style={{ display: 'flex', gap: '20px' }}>
-                    <div style={{ width: '80px', height: '80px', borderRadius: 'var(--radius-md)', backgroundImage: `url("${course.coverImageUrl}")`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '4px' }}>{course.title}</h3>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginBottom: '16px' }}>Last accessed: {course.lastAccessed}</p>
-                      
-                      <div style={{ width: '100%', height: '6px', backgroundColor: 'var(--border-light)', borderRadius: '3px', overflow: 'hidden', marginBottom: '8px' }}>
-                        <div style={{ width: `${course.progress}%`, height: '100%', backgroundColor: 'var(--brand-primary)', borderRadius: '3px' }}></div>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                        <span style={{ color: 'var(--text-secondary)' }}>{course.progress}% Complete</span>
-                        <Link href={`/learn/${course.id}`} style={{ color: 'var(--brand-primary)', fontWeight: 600 }}>Continue →</Link>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+        <DashboardProgressClient topicProgress={topicProgress} enrolledCourses={enrolledCourses} />
 
         <section>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 600, marginBottom: '24px' }}>Recent AI Tutor Chats</h2>
