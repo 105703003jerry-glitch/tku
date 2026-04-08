@@ -98,6 +98,9 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Lesson reorder payload does not match the current course lessons.' }, { status: 400 });
       }
 
+      const lessonIdsInOrder = [];
+      const finalLessonMappings = [];
+
       for (const module of modules) {
         const moduleSortOrder = Number.parseInt(module.moduleSortOrder, 10) || 0;
         const lessonIds = Array.isArray(module.lessonIds) ? module.lessonIds : [];
@@ -109,15 +112,38 @@ export async function POST(request) {
             continue;
           }
 
-          await sql`
-            UPDATE lessons
-            SET
-              module_sort_order = ${moduleSortOrder},
-              lesson_sort_order = ${(index + 1) * 10}
-            WHERE id = ${lessonId}
-              AND course_id = ${courseId}
-          `;
+          lessonIdsInOrder.push(lessonId);
+          finalLessonMappings.push({
+            lessonId,
+            finalModuleSortOrder: moduleSortOrder,
+            finalLessonSortOrder: (index + 1) * 10,
+          });
         }
+      }
+
+      for (let index = 0; index < lessonIdsInOrder.length; index += 1) {
+        const lessonId = lessonIdsInOrder[index];
+        const tempValue = -1000 - index;
+
+        await sql`
+          UPDATE lessons
+          SET
+            module_sort_order = ${tempValue},
+            lesson_sort_order = ${tempValue}
+          WHERE id = ${lessonId}
+            AND course_id = ${courseId}
+        `;
+      }
+
+      for (const mapping of finalLessonMappings) {
+        await sql`
+          UPDATE lessons
+          SET
+            module_sort_order = ${mapping.finalModuleSortOrder},
+            lesson_sort_order = ${mapping.finalLessonSortOrder}
+          WHERE id = ${mapping.lessonId}
+            AND course_id = ${courseId}
+        `;
       }
     } else {
       return NextResponse.json({ error: 'Unsupported reorder type.' }, { status: 400 });
