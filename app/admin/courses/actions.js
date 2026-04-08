@@ -2,7 +2,7 @@
 
 import db from '@/api/_lib/db';
 import { getAuthUser } from '@/app/lib/authSession';
-import { buildTrackMetadata, formatDurationLabel } from '@/app/lib/courseMeta';
+import { buildTrackMetadata, formatDurationLabel, normalizeCourseId } from '@/app/lib/courseMeta';
 import { revalidatePath } from 'next/cache';
 
 // Verify Admin Role before execution
@@ -18,13 +18,14 @@ export async function createCourse(formData) {
     await checkAdmin();
     const sql = db.getSql();
     
-    const id = formData.get('id');
+    const rawId = formData.get('id');
     const title = formData.get('title');
     const description = formData.get('description');
     const trackKey = formData.get('trackKey');
     const trackLabels = formData.get('trackLabels');
     const levelKey = formData.get('levelKey');
     const durationHours = formData.get('durationHours');
+    const id = normalizeCourseId(rawId, title);
     const summary = description;
     const trackMeta = buildTrackMetadata(trackKey, trackLabels);
     const durationLabel = formatDurationLabel(durationHours);
@@ -32,6 +33,10 @@ export async function createCourse(formData) {
     const formatLabel = 'Video lessons';
     const audienceLabel = 'All learners';
     
+    if (!id) {
+      throw new Error('Please provide a valid course slug.');
+    }
+
     // 1. Insert into courses
     await sql`
       INSERT INTO courses (
@@ -86,6 +91,9 @@ export async function createCourse(formData) {
     return { success: true, courseId: id };
   } catch (err) {
     console.error("Create Course Error:", err);
+    if (err.code === '23505') {
+      return { success: false, error: 'This course slug already exists. Please use a different one.' };
+    }
     return { success: false, error: err.message };
   }
 }

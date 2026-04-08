@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { createCourse } from '../actions';
-import { TRACK_OPTIONS, LEVEL_OPTIONS } from '@/app/lib/courseMeta';
+import { TRACK_OPTIONS, LEVEL_OPTIONS, normalizeCourseId } from '@/app/lib/courseMeta';
 import Link from 'next/link';
 
 export default function NewCoursePage() {
@@ -12,6 +12,8 @@ export default function NewCoursePage() {
   const [errorMsg, setErrorMsg] = useState(null);
   const [trackKey, setTrackKey] = useState(TRACK_OPTIONS[0].key);
   const [trackLabels, setTrackLabels] = useState(TRACK_OPTIONS[0].labelZh);
+  const [title, setTitle] = useState('');
+  const [courseId, setCourseId] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -49,13 +51,42 @@ export default function NewCoursePage() {
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>Course Unique ID (Slug)</label>
-            <input name="id" required type="text" placeholder="e.g., introduction-to-generative-ai" style={{ padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', width: '100%' }} />
-            <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>This is the unique URL identifier. Letters, numbers, and hyphens only.</span>
+            <input
+              name="id"
+              required
+              type="text"
+              value={courseId}
+              onChange={(event) => setCourseId(normalizeCourseId(event.target.value, title))}
+              placeholder="e.g., introduction-to-generative-ai"
+              style={{ padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', width: '100%' }}
+            />
+            <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>會自動轉成網址格式，例如 `New text` 會變成 `new-text`。</span>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>Course Title</label>
-            <input name="title" required type="text" placeholder="e.g., Introduction to Gen AI" style={{ padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', width: '100%' }} />
+            <input
+              name="title"
+              required
+              type="text"
+              value={title}
+              onChange={(event) => {
+                const nextTitle = event.target.value;
+                setTitle(nextTitle);
+                setCourseId((currentId) => {
+                  const normalizedCurrentId = normalizeCourseId(currentId, '');
+                  const normalizedPreviousTitle = normalizeCourseId(title, '');
+
+                  if (!normalizedCurrentId || normalizedCurrentId === normalizedPreviousTitle) {
+                    return normalizeCourseId('', nextTitle);
+                  }
+
+                  return currentId;
+                });
+              }}
+              placeholder="e.g., Introduction to Gen AI"
+              style={{ padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', width: '100%' }}
+            />
           </div>
 
           <div style={{ display: 'flex', gap: '24px' }}>

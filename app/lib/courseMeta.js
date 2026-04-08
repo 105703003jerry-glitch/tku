@@ -50,3 +50,16 @@ export function formatDurationLabel(durationHours) {
 
   return `${numericHours} hours`;
 }
+
+export function normalizeCourseId(rawId, fallbackTitle) {
+  const source = String(rawId || fallbackTitle || '')
+    .trim()
+    .toLowerCase();
+
+  return source
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-{2,}/g, '-');
+}
