@@ -3,14 +3,17 @@ import { LEVEL_OPTIONS, TRACK_OPTIONS, parseTrackLabels } from '@/app/lib/course
 import Link from 'next/link';
 import AdminShell from '../../_components/AdminShell';
 import CourseCoverFields from '../CourseCoverFields';
+import SaveCourseButton from '../SaveCourseButton';
 import { addLessonToCourse, deleteLesson, updateCourseDetails, addModuleToCourse, deleteModuleFromCourse } from '../actions';
 import CourseOrganizerClient from './CourseOrganizerClient';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminCourseDetails({ params }) {
+export default async function AdminCourseDetails({ params, searchParams }) {
   const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
   const { courseId } = resolvedParams;
+  const saved = resolvedSearchParams?.saved === '1';
   let course = null;
   let lessons = [];
   let modules = [];
@@ -64,6 +67,12 @@ export default async function AdminCourseDetails({ params }) {
       <header style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: '2.5rem', fontWeight: 700, color: '#111827', marginBottom: '8px' }}>{course?.title || courseId}</h1>
       </header>
+
+      {saved && (
+        <div style={{ marginBottom: '20px', padding: '12px 14px', borderRadius: '10px', border: '1px solid #bbf7d0', backgroundColor: '#f0fdf4', color: '#166534', fontSize: '0.88rem', fontWeight: 500 }}>
+          Course settings updated successfully.
+        </div>
+      )}
 
       {!error && course && (
         <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', border: '1px solid #e5e7eb', marginBottom: '32px' }}>
@@ -120,7 +129,7 @@ export default async function AdminCourseDetails({ params }) {
               />
             </div>
             <div style={{ flex: '1 1 100%', display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
-               <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#111827', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>Save Changes</button>
+               <SaveCourseButton />
             </div>
           </form>
         </div>

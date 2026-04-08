@@ -429,7 +429,7 @@ export async function updateCourseDetails(formData) {
     revalidatePath('/courses');
     revalidatePath('/dashboard');
     revalidatePath(`/learn/${id}`);
-    redirectPath = `/admin/courses/${id}`;
+    redirectPath = `/admin/courses/${id}?saved=1`;
   } catch (err) {
     console.error("Update Course Error:", err);
     return { success: false, error: err.message };
