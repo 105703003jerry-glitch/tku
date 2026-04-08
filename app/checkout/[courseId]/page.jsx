@@ -1,13 +1,23 @@
 'use client';
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import Link from 'next/link';
+import { processCheckout } from './actions';
 
 export default function CheckoutPage({ params }) {
   const [success, setSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null);
+  const [isPending, startTransition] = useTransition();
 
   const handlePurchase = () => {
-    // Simulate API request
-    setTimeout(() => setSuccess(true), 1000);
+    startTransition(async () => {
+      setErrorMsg(null);
+      const res = await processCheckout(params.courseId);
+      if (res.success) {
+        setSuccess(true);
+      } else {
+        setErrorMsg("Purchase failed. Please try again or check database logs.");
+      }
+    });
   };
 
   return (
@@ -42,8 +52,14 @@ export default function CheckoutPage({ params }) {
               </div>
             </div>
 
-            <button onClick={handlePurchase} className="btn-primary" style={{ width: '100%', padding: '14px', fontSize: '1.1rem' }}>
-              Confirm Payment
+            {errorMsg && (
+              <div style={{ padding: '12px', backgroundColor: '#fff3cd', color: '#856404', borderRadius: '4px', marginBottom: '16px', fontSize: '0.9rem' }}>
+                {errorMsg}
+              </div>
+            )}
+
+            <button onClick={handlePurchase} disabled={isPending} className="btn-primary" style={{ width: '100%', padding: '14px', fontSize: '1.1rem', opacity: isPending ? 0.7 : 1 }}>
+              {isPending ? 'Processing...' : 'Confirm Payment'}
             </button>
             <div style={{ marginTop: '16px', textAlign: 'center' }}>
               <Link href="/courses" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
