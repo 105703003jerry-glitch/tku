@@ -74,3 +74,58 @@ export async function addLessonToCourse(formData) {
     return { success: false, error: err.message };
   }
 }
+
+export async function deleteLesson(formData) {
+  try {
+    await checkAdmin();
+    const sql = db.getSql();
+    
+    const lessonId = formData.get('lessonId');
+    const courseId = formData.get('courseId');
+    
+    if (!lessonId) throw new Error("Lesson ID required");
+    
+    await sql`DELETE FROM lessons WHERE id = ${lessonId} AND course_id = ${courseId}`;
+    
+    revalidatePath(`/admin/courses/${courseId}`);
+    return { success: true };
+  } catch (err) {
+    console.error("Delete Lesson Error:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function updateCourseDetails(formData) {
+  try {
+    await checkAdmin();
+    const sql = db.getSql();
+    
+    const id = formData.get('courseId');
+    const title = formData.get('title');
+    const description = formData.get('description');
+    const status = formData.get('status');
+    
+    if (!id || !title) throw new Error("Missing required fields");
+    
+    // Update courses table
+    await sql`
+      UPDATE courses 
+      SET status = ${status}, updated_at = NOW() 
+      WHERE id = ${id}
+    `;
+    
+    // Update course_localizations (zh-TW)
+    await sql`
+      UPDATE course_localizations 
+      SET title = ${title}, description = ${description}
+      WHERE course_id = ${id} AND locale = 'zh-TW'
+    `;
+    
+    revalidatePath(`/admin/courses/${id}`);
+    revalidatePath(`/admin/courses`);
+    return { success: true };
+  } catch (err) {
+    console.error("Update Course Error:", err);
+    return { success: false, error: err.message };
+  }
+}

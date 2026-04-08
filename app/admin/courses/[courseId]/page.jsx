@@ -1,7 +1,7 @@
 import db from '@/api/_lib/db';
 import Link from 'next/link';
 import AdminShell from '../../_components/AdminShell';
-import { addLessonToCourse } from '../actions';
+import { addLessonToCourse, deleteLesson, updateCourseDetails } from '../actions';
 
 export default async function AdminCourseDetails({ params }) {
   const { courseId } = params;
@@ -45,15 +45,36 @@ export default async function AdminCourseDetails({ params }) {
         ← Back to Curriculum
       </Link>
 
-      <header style={{ marginBottom: '40px' }}>
+      <header style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: '2.5rem', fontWeight: 700, color: '#111827', marginBottom: '8px' }}>{course?.title || courseId}</h1>
-        <span style={{ fontSize: '0.8rem', fontWeight: 600, backgroundColor: '#e5e7eb', color: '#374151', padding: '4px 8px', borderRadius: '4px', marginRight: '8px' }}>
-          {course?.track_key}
-        </span>
-        <span style={{ fontSize: '0.8rem', fontWeight: 600, backgroundColor: '#dcfce7', color: '#166534', padding: '4px 8px', borderRadius: '4px' }}>
-          {course?.status.toUpperCase()}
-        </span>
       </header>
+
+      {!error && course && (
+        <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', border: '1px solid #e5e7eb', marginBottom: '32px' }}>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '16px' }}>Course Settings</h2>
+          <form action={updateCourseDetails} style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+            <input type="hidden" name="courseId" value={courseId} />
+            <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+               <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Title (zh-TW)</label>
+               <input name="title" defaultValue={course.title} required style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+            </div>
+            <div style={{ flex: '1 1 150px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+               <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Status</label>
+               <select name="status" defaultValue={course.status} style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px' }}>
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+               </select>
+            </div>
+            <div style={{ flex: '1 1 100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+               <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Description (zh-TW)</label>
+               <textarea name="description" defaultValue={course.description || ''} rows={3} style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+            </div>
+            <div style={{ flex: '1 1 100%', display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+               <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#111827', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>Save Changes</button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {error ? (
         <div style={{ padding: '16px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '8px' }}>{error}</div>
@@ -79,8 +100,13 @@ export default async function AdminCourseDetails({ params }) {
                       <h4 style={{ fontWeight: 600, color: '#111827', marginBottom: '4px' }}>{lesson.title}</h4>
                       <p style={{ fontSize: '0.8rem', color: '#6b7280' }}>YouTube ID: <span style={{ fontFamily: 'monospace' }}>{lesson.external_video_id}</span></p>
                     </div>
-                    <div style={{ color: '#9ca3af', fontSize: '0.8rem' }}>
-                      {lesson.lesson_type}
+                    <div style={{ color: '#9ca3af', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <span>{lesson.lesson_type}</span>
+                      <form action={deleteLesson}>
+                        <input type="hidden" name="lessonId" value={lesson.id} />
+                        <input type="hidden" name="courseId" value={courseId} />
+                        <button type="submit" style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem', textDecoration: 'underline', padding: 0 }}>Delete</button>
+                      </form>
                     </div>
                   </div>
                 ))}
