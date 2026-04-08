@@ -2,6 +2,7 @@ import Link from 'next/link';
 import db from '@/api/_lib/db';
 import courseStore from '@/api/_lib/courseStore';
 import { getAuthUser } from '../lib/authSession';
+import { listUserCourseProgress } from '../lib/learningProgress';
 import { performLogout } from '../login/actions';
 
 export default async function Dashboard() {
@@ -21,12 +22,7 @@ export default async function Dashboard() {
 
     // 2. Fetch enrolled courses and their progress for this user
     if (user) {
-      const enrollments = await sql`
-        SELECT e.course_id, e.progress_percent, e.last_activity_at 
-        FROM enrollments e 
-        WHERE e.user_id = ${user.id}
-        ORDER BY e.last_activity_at DESC
-      `;
+      const enrollments = await listUserCourseProgress(sql, user.id);
       
       // Map course metadata via courseStore and compute Topic progress
       if (enrollments.length > 0) {
@@ -36,7 +32,7 @@ export default async function Dashboard() {
         const topicsMap = {};
         
         enrolledCourses = enrollments.map(enr => {
-          const courseData = publishedCourses.find(c => c.id === enr.course_id);
+          const courseData = publishedCourses.find(c => c.id === enr.courseId);
           
           // Track Topic Progress
           const trackKey = courseData?.track || 'uncategorized';
@@ -45,14 +41,14 @@ export default async function Dashboard() {
           if (!topicsMap[trackKey]) {
              topicsMap[trackKey] = { name: trackName, totalProgress: 0, courseCount: 0 };
           }
-          topicsMap[trackKey].totalProgress += (enr.progress_percent || 0);
+          topicsMap[trackKey].totalProgress += (enr.progressPercent || 0);
           topicsMap[trackKey].courseCount += 1;
           
           return {
-            id: enr.course_id,
-            title: courseData?.title?.['zh-TW'] || enr.course_id,
-            progress: enr.progress_percent || 0,
-            lastAccessed: new Date(enr.last_activity_at).toLocaleDateString()
+            id: enr.courseId,
+            title: courseData?.title?.['zh-TW'] || enr.courseId,
+            progress: enr.progressPercent || 0,
+            lastAccessed: enr.lastActivityAt ? new Date(enr.lastActivityAt).toLocaleDateString() : 'Recently'
           };
         });
         

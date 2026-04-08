@@ -229,12 +229,18 @@ CREATE TABLE IF NOT EXISTS lesson_progress (
     status VARCHAR(20) NOT NULL DEFAULT 'not_started',
     progress_percent NUMERIC(5, 2) NOT NULL DEFAULT 0,
     time_spent_seconds INT NOT NULL DEFAULT 0,
+    max_position_seconds INT NOT NULL DEFAULT 0,
+    last_position_seconds INT NOT NULL DEFAULT 0,
     started_at TIMESTAMPTZ,
     completed_at TIMESTAMPTZ,
     last_viewed_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (enrollment_id, lesson_id)
 );
+
+ALTER TABLE lesson_progress
+    ADD COLUMN IF NOT EXISTS max_position_seconds INT NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS last_position_seconds INT NOT NULL DEFAULT 0;
 
 CREATE INDEX IF NOT EXISTS lesson_progress_enrollment_id_idx
     ON lesson_progress (enrollment_id, updated_at DESC);
