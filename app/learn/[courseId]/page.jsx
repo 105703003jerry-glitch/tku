@@ -6,7 +6,9 @@ import { getAuthUser } from '@/app/lib/authSession';
 export const dynamic = 'force-dynamic';
 
 export default async function LearnCoursePage({ params, searchParams }) {
-  const { courseId } = params;
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
+  const { courseId } = resolvedParams;
   let course = null;
   let error = null;
   let user = await getAuthUser();
@@ -43,7 +45,7 @@ export default async function LearnCoursePage({ params, searchParams }) {
   ] : (course?.lessons || []);
   
   // Support interactive menu selection via query parameters
-  const activeLessonIndex = searchParams?.lesson ? parseInt(searchParams.lesson, 10) : 0;
+  const activeLessonIndex = resolvedSearchParams?.lesson ? parseInt(resolvedSearchParams.lesson, 10) : 0;
   const activeLesson = lessons[activeLessonIndex] || lessons[0] || null;
 
   return (

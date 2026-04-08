@@ -6,7 +6,8 @@ import { addLessonToCourse, deleteLesson, updateCourseDetails, addModuleToCourse
 export const dynamic = 'force-dynamic';
 
 export default async function AdminCourseDetails({ params }) {
-  const { courseId } = params;
+  const resolvedParams = await params;
+  const { courseId } = resolvedParams;
   let course = null;
   let lessons = [];
   let modules = [];
