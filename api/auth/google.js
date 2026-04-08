@@ -5,7 +5,7 @@ var http = require('../_lib/http');
 var crypto = require('crypto');
 
 function getRedirectUri(req) {
-    return process.env.GOOGLE_REDIRECT_URI || (http.getOrigin(req) + '/api/auth/google/callback');
+    return process.env.GOOGLE_REDIRECT_URI || (http.getOrigin(req) + '/api/auth/google?action=callback');
 }
 
 function clearOAuthCookies(res) {
