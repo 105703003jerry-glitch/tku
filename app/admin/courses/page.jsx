@@ -2,6 +2,8 @@ import Link from 'next/link';
 import db from '@/api/_lib/db';
 import AdminShell from '../_components/AdminShell';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminCoursesPage() {
   let coursesList = [];
   let error = null;
