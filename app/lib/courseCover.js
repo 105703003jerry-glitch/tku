@@ -114,8 +114,19 @@ export function getCourseCoverPresetUrl({ presetKey, title, level, trackLabel })
 }
 
 export function getCourseCoverImage(course) {
-  if (course?.coverImageUrl) {
+  const coverSource = normalizeCoverSource(course?.coverImageSource);
+
+  if (coverSource === 'upload' && course?.coverImageUrl) {
     return course.coverImageUrl;
+  }
+
+  if (coverSource === 'preset') {
+    return getCourseCoverPresetUrl({
+      presetKey: course?.coverPresetKey,
+      title: course?.title?.['zh-TW'] || course?.title?.en || course?.id,
+      level: course?.level,
+      trackLabel: course?.trackLabel?.['zh-TW'] || course?.track,
+    });
   }
 
   const firstLesson = Array.isArray(course?.lessons) ? course.lessons.find((lesson) => lesson?.thumbnailUrl || lesson?.externalVideoId) : null;
