@@ -49,20 +49,24 @@ function createDefaultLessonProgress(lesson) {
 }
 
 function mergeLessonProgress(existing, incoming) {
+  if (!existing && !incoming) {
+    return null;
+  }
+
   if (!existing) {
-    return incoming;
+    return { ...incoming };
   }
 
   return {
     ...existing,
-    ...incoming,
+    ...(incoming || {}),
     maxPositionSeconds: Math.max(
       Number(existing.maxPositionSeconds || 0),
-      Number(incoming.maxPositionSeconds || 0)
+      Number(incoming?.maxPositionSeconds || 0)
     ),
     lastPositionSeconds: Math.max(
       Number(existing.lastPositionSeconds || 0),
-      Number(incoming.lastPositionSeconds || 0)
+      Number(incoming?.lastPositionSeconds || 0)
     ),
   };
 }
