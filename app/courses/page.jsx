@@ -3,6 +3,7 @@ import Link from 'next/link';
 // Use the existing DB logic
 import db from '@/api/_lib/db';
 import { parseTrackLabels } from '@/app/lib/courseMeta';
+import { getCourseCoverImage } from '@/app/lib/courseCover';
 import courseStore from '@/api/_lib/courseStore';
 
 export const dynamic = 'force-dynamic';
@@ -53,7 +54,7 @@ export default async function CoursesPage() {
             <div style={{ 
                 height: '180px', 
                 backgroundColor: '#f2f2f7', 
-                backgroundImage: 'url(/assets/course_thumb_ai.png)',
+                backgroundImage: `url("${getCourseCoverImage(course)}")`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 borderBottom: '1px solid var(--border-light)' 

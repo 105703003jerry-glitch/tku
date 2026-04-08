@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createCourse } from '../actions';
 import { TRACK_OPTIONS, LEVEL_OPTIONS, normalizeCourseId } from '@/app/lib/courseMeta';
 import Link from 'next/link';
+import CourseCoverFields from '../CourseCoverFields';
 
 export default function NewCoursePage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function NewCoursePage() {
   const [trackLabels, setTrackLabels] = useState(TRACK_OPTIONS[0].labelZh);
   const [title, setTitle] = useState('');
   const [courseId, setCourseId] = useState('');
+  const [levelKey, setLevelKey] = useState(LEVEL_OPTIONS[0]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -114,7 +116,7 @@ export default function NewCoursePage() {
             
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>Level</label>
-              <select name="levelKey" required style={{ padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', width: '100%', backgroundColor: 'white' }}>
+              <select name="levelKey" required value={levelKey} onChange={(event) => setLevelKey(event.target.value)} style={{ padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', width: '100%', backgroundColor: 'white' }}>
                 {LEVEL_OPTIONS.map((level) => (
                   <option key={level} value={level}>{level}</option>
                 ))}
@@ -147,6 +149,13 @@ export default function NewCoursePage() {
             <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>Course Description</label>
             <textarea name="description" required placeholder="Describe what the students will learn..." rows={4} style={{ padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', width: '100%', resize: 'vertical' }} />
           </div>
+
+          <CourseCoverFields
+            initialSource="preset"
+            title={title}
+            level={levelKey}
+            trackLabel={trackLabels}
+          />
 
           <button disabled={isPending} type="submit" style={{ padding: '14px', backgroundColor: 'var(--brand-primary)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer', marginTop: '16px', opacity: isPending ? 0.7 : 1 }}>
             {isPending ? 'Publishing Course...' : 'Create Course Catalog'}

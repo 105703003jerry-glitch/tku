@@ -1,8 +1,17 @@
 'use server';
 
+import { put } from '@vercel/blob';
 import db from '@/api/_lib/db';
 import { getAuthUser } from '@/app/lib/authSession';
 import { buildTrackMetadata, formatDurationLabel, normalizeCourseId } from '@/app/lib/courseMeta';
+import {
+  COURSE_COVER_RECOMMENDED_HEIGHT,
+  COURSE_COVER_RECOMMENDED_WIDTH,
+  normalizeCoverPresetKey,
+  normalizeCoverSource,
+  readImageMetadata,
+  validateCourseCoverUpload,
+} from '@/app/lib/courseCover';
 import { revalidatePath } from 'next/cache';
 
 // Verify Admin Role before execution
@@ -13,10 +22,111 @@ async function checkAdmin() {
   }
 }
 
+async function ensureCourseCoverSchema(sql) {
+  await sql`ALTER TABLE courses ADD COLUMN IF NOT EXISTS cover_image_url TEXT`;
+  await sql`ALTER TABLE courses ADD COLUMN IF NOT EXISTS cover_image_source VARCHAR(20) NOT NULL DEFAULT 'youtube'`;
+  await sql`ALTER TABLE courses ADD COLUMN IF NOT EXISTS cover_preset_key VARCHAR(80)`;
+  await sql`ALTER TABLE courses ADD COLUMN IF NOT EXISTS cover_image_width INT`;
+  await sql`ALTER TABLE courses ADD COLUMN IF NOT EXISTS cover_image_height INT`;
+}
+
+async function uploadCourseCover({ courseId, file }) {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    throw new Error('Cover uploads require `BLOB_READ_WRITE_TOKEN` in Vercel environment variables.');
+  }
+
+  if (!file || typeof file.arrayBuffer !== 'function') {
+    throw new Error('A valid cover image file is required.');
+  }
+
+  const fileBuffer = Buffer.from(await file.arrayBuffer());
+  const { width, height } = readImageMetadata(fileBuffer);
+  const validation = validateCourseCoverUpload({ file, width, height });
+
+  if (!validation.ok) {
+    throw new Error(validation.error);
+  }
+
+  const extension = file.type === 'image/png' ? 'png' : (file.type === 'image/webp' ? 'webp' : 'jpg');
+  const sanitizedFilename = `${courseId}-${Date.now()}.${extension}`;
+  const upload = await put(`course-covers/${sanitizedFilename}`, fileBuffer, {
+    access: 'public',
+    addRandomSuffix: false,
+    contentType: file.type,
+  });
+
+  return {
+    coverImageUrl: upload.url,
+    coverImageWidth: width,
+    coverImageHeight: height,
+  };
+}
+
+async function resolveCourseCoverPayload(formData, courseId, currentCourse = null) {
+  const coverSource = normalizeCoverSource(formData.get('coverSource'));
+  const coverPresetKey = normalizeCoverPresetKey(formData.get('coverPresetKey'));
+  const coverFile = formData.get('coverImage');
+  const hasNewUpload = coverFile && typeof coverFile === 'object' && typeof coverFile.size === 'number' && coverFile.size > 0;
+
+  if (hasNewUpload) {
+    const uploaded = await uploadCourseCover({ courseId, file: coverFile });
+    return {
+      coverImageSource: 'upload',
+      coverImageUrl: uploaded.coverImageUrl,
+      coverPresetKey: null,
+      coverImageWidth: uploaded.coverImageWidth,
+      coverImageHeight: uploaded.coverImageHeight,
+    };
+  }
+
+  if (coverSource === 'preset') {
+    return {
+      coverImageSource: 'preset',
+      coverImageUrl: null,
+      coverPresetKey,
+      coverImageWidth: COURSE_COVER_RECOMMENDED_WIDTH,
+      coverImageHeight: COURSE_COVER_RECOMMENDED_HEIGHT,
+    };
+  }
+
+  if (coverSource === 'youtube') {
+    return {
+      coverImageSource: 'youtube',
+      coverImageUrl: null,
+      coverPresetKey: currentCourse?.cover_preset_key || null,
+      coverImageWidth: null,
+      coverImageHeight: null,
+    };
+  }
+
+  if (currentCourse?.cover_image_source === 'upload' && currentCourse?.cover_image_url) {
+    return {
+      coverImageSource: 'upload',
+      coverImageUrl: currentCourse.cover_image_url,
+      coverPresetKey: null,
+      coverImageWidth: currentCourse.cover_image_width || null,
+      coverImageHeight: currentCourse.cover_image_height || null,
+    };
+  }
+
+  if (coverSource === 'upload') {
+    throw new Error('Please choose a cover image file before saving.');
+  }
+
+  return {
+    coverImageSource: 'preset',
+    coverImageUrl: null,
+    coverPresetKey,
+    coverImageWidth: COURSE_COVER_RECOMMENDED_WIDTH,
+    coverImageHeight: COURSE_COVER_RECOMMENDED_HEIGHT,
+  };
+}
+
 export async function createCourse(formData) {
   try {
     await checkAdmin();
     const sql = db.getSql();
+    await ensureCourseCoverSchema(sql);
     
     const rawId = formData.get('id');
     const title = formData.get('title');
@@ -37,6 +147,8 @@ export async function createCourse(formData) {
       throw new Error('Please provide a valid course slug.');
     }
 
+    const coverPayload = await resolveCourseCoverPayload(formData, id);
+
     // 1. Insert into courses
     await sql`
       INSERT INTO courses (
@@ -46,6 +158,11 @@ export async function createCourse(formData) {
         track_label_en,
         level_key,
         duration_label,
+        cover_image_url,
+        cover_image_source,
+        cover_preset_key,
+        cover_image_width,
+        cover_image_height,
         instructor_name,
         status,
         published_at
@@ -57,6 +174,11 @@ export async function createCourse(formData) {
         ${trackMeta.trackLabelEn},
         ${levelKey},
         ${durationLabel},
+        ${coverPayload.coverImageUrl},
+        ${coverPayload.coverImageSource},
+        ${coverPayload.coverPresetKey},
+        ${coverPayload.coverImageWidth},
+        ${coverPayload.coverImageHeight},
         ${instructorName},
         'published',
         NOW()
@@ -102,6 +224,7 @@ export async function addModuleToCourse(formData) {
   try {
     await checkAdmin();
     const sql = db.getSql();
+    await ensureCourseCoverSchema(sql);
     
     const courseId = formData.get('courseId');
     const title = formData.get('title');
@@ -131,6 +254,7 @@ export async function deleteModuleFromCourse(formData) {
   try {
     await checkAdmin();
     const sql = db.getSql();
+    await ensureCourseCoverSchema(sql);
 
     const courseId = formData.get('courseId');
     const moduleSortOrder = parseInt(formData.get('moduleSortOrder') || 0, 10);
@@ -259,6 +383,14 @@ export async function updateCourseDetails(formData) {
     const durationLabel = formatDurationLabel(durationHours);
     
     if (!id || !title) throw new Error("Missing required fields");
+
+    const currentCourseRows = await sql`
+      SELECT cover_image_url, cover_image_source, cover_preset_key, cover_image_width, cover_image_height
+      FROM courses
+      WHERE id = ${id}
+      LIMIT 1
+    `;
+    const coverPayload = await resolveCourseCoverPayload(formData, id, currentCourseRows[0] || null);
     
     // Update courses table
     await sql`
@@ -269,6 +401,11 @@ export async function updateCourseDetails(formData) {
         track_label_en = ${trackMeta.trackLabelEn},
         level_key = ${levelKey},
         duration_label = ${durationLabel},
+        cover_image_url = ${coverPayload.coverImageUrl},
+        cover_image_source = ${coverPayload.coverImageSource},
+        cover_preset_key = ${coverPayload.coverPresetKey},
+        cover_image_width = ${coverPayload.coverImageWidth},
+        cover_image_height = ${coverPayload.coverImageHeight},
         status = ${status},
         updated_at = NOW()
       WHERE id = ${id}

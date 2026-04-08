@@ -1,3 +1,11 @@
+async function ensureCourseCoverSchema(sql) {
+    await sql`ALTER TABLE courses ADD COLUMN IF NOT EXISTS cover_image_url TEXT`;
+    await sql`ALTER TABLE courses ADD COLUMN IF NOT EXISTS cover_image_source VARCHAR(20) NOT NULL DEFAULT 'youtube'`;
+    await sql`ALTER TABLE courses ADD COLUMN IF NOT EXISTS cover_preset_key VARCHAR(80)`;
+    await sql`ALTER TABLE courses ADD COLUMN IF NOT EXISTS cover_image_width INT`;
+    await sql`ALTER TABLE courses ADD COLUMN IF NOT EXISTS cover_image_height INT`;
+}
+
 async function getPublishedCourses(sql, courseId) {
     var courses;
     var localizations;
@@ -5,6 +13,8 @@ async function getPublishedCourses(sql, courseId) {
     var modules;
     var lessons;
     var courseMap = {};
+
+    await ensureCourseCoverSchema(sql);
 
     if (courseId) {
         courses = await sql`
@@ -15,6 +25,11 @@ async function getPublishedCourses(sql, courseId) {
                 track_label_en,
                 level_key,
                 duration_label,
+                cover_image_url,
+                cover_image_source,
+                cover_preset_key,
+                cover_image_width,
+                cover_image_height,
                 instructor_name,
                 status,
                 sort_order
@@ -32,6 +47,11 @@ async function getPublishedCourses(sql, courseId) {
                 track_label_en,
                 level_key,
                 duration_label,
+                cover_image_url,
+                cover_image_source,
+                cover_preset_key,
+                cover_image_width,
+                cover_image_height,
                 instructor_name,
                 status,
                 sort_order
@@ -159,6 +179,11 @@ async function getPublishedCourses(sql, courseId) {
             },
             level: course.level_key,
             duration: course.duration_label,
+            coverImageUrl: course.cover_image_url,
+            coverImageSource: course.cover_image_source || 'youtube',
+            coverPresetKey: course.cover_preset_key,
+            coverImageWidth: course.cover_image_width,
+            coverImageHeight: course.cover_image_height,
             instructor: course.instructor_name,
             title: {},
             summary: {},

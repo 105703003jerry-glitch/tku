@@ -2,6 +2,7 @@ import db from '@/api/_lib/db';
 import { LEVEL_OPTIONS, TRACK_OPTIONS, parseTrackLabels } from '@/app/lib/courseMeta';
 import Link from 'next/link';
 import AdminShell from '../../_components/AdminShell';
+import CourseCoverFields from '../CourseCoverFields';
 import { addLessonToCourse, deleteLesson, updateCourseDetails, addModuleToCourse, deleteModuleFromCourse } from '../actions';
 import CourseOrganizerClient from './CourseOrganizerClient';
 
@@ -107,6 +108,16 @@ export default async function AdminCourseDetails({ params }) {
             <div style={{ flex: '1 1 100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Description (zh-TW)</label>
                <textarea name="description" defaultValue={course.description || ''} rows={3} style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+            </div>
+            <div style={{ flex: '1 1 100%' }}>
+              <CourseCoverFields
+                initialSource={course.cover_image_source || 'youtube'}
+                initialPresetKey={course.cover_preset_key || undefined}
+                existingImageUrl={course.cover_image_url || null}
+                title={course.title || courseId}
+                level={course.level_key}
+                trackLabel={course.track_label_zh}
+              />
             </div>
             <div style={{ flex: '1 1 100%', display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
                <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#111827', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>Save Changes</button>

@@ -161,6 +161,11 @@ CREATE TABLE IF NOT EXISTS courses (
     track_label_en VARCHAR(80) NOT NULL,
     level_key VARCHAR(20) NOT NULL,
     duration_label VARCHAR(80) NOT NULL,
+    cover_image_url TEXT,
+    cover_image_source VARCHAR(20) NOT NULL DEFAULT 'youtube',
+    cover_preset_key VARCHAR(80),
+    cover_image_width INT,
+    cover_image_height INT,
     instructor_name VARCHAR(160) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'draft',
     sort_order INT NOT NULL DEFAULT 0,
@@ -168,6 +173,13 @@ CREATE TABLE IF NOT EXISTS courses (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE courses
+    ADD COLUMN IF NOT EXISTS cover_image_url TEXT,
+    ADD COLUMN IF NOT EXISTS cover_image_source VARCHAR(20) NOT NULL DEFAULT 'youtube',
+    ADD COLUMN IF NOT EXISTS cover_preset_key VARCHAR(80),
+    ADD COLUMN IF NOT EXISTS cover_image_width INT,
+    ADD COLUMN IF NOT EXISTS cover_image_height INT;
 
 CREATE TABLE IF NOT EXISTS course_localizations (
     id BIGSERIAL PRIMARY KEY,

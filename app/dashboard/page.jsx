@@ -2,6 +2,7 @@ import Link from 'next/link';
 import db from '@/api/_lib/db';
 import courseStore from '@/api/_lib/courseStore';
 import { getAuthUser } from '../lib/authSession';
+import { getCourseCoverImage } from '../lib/courseCover';
 import { listUserCourseProgress } from '../lib/learningProgress';
 import { performLogout } from '../login/actions';
 
@@ -47,6 +48,7 @@ export default async function Dashboard() {
           return {
             id: enr.courseId,
             title: courseData?.title?.['zh-TW'] || enr.courseId,
+            coverImageUrl: courseData ? getCourseCoverImage(courseData) : '/assets/course_thumb_ai.png',
             progress: enr.progressPercent || 0,
             lastAccessed: enr.lastActivityAt ? new Date(enr.lastActivityAt).toLocaleDateString() : 'Recently'
           };
@@ -167,7 +169,7 @@ export default async function Dashboard() {
               {enrolledCourses.map(course => (
                 <div key={course.id} className="card" style={{ padding: '24px' }}>
                   <div style={{ display: 'flex', gap: '20px' }}>
-                    <div style={{ width: '80px', height: '80px', borderRadius: 'var(--radius-md)', backgroundImage: 'url(/assets/course_thumb_ai.png)', backgroundSize: 'cover' }} />
+                    <div style={{ width: '80px', height: '80px', borderRadius: 'var(--radius-md)', backgroundImage: `url("${course.coverImageUrl}")`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
                     <div style={{ flex: 1 }}>
                       <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '4px' }}>{course.title}</h3>
                       <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginBottom: '16px' }}>Last accessed: {course.lastAccessed}</p>
