@@ -2,7 +2,7 @@ import db from '@/api/_lib/db';
 import { LEVEL_OPTIONS, TRACK_OPTIONS, parseTrackLabels } from '@/app/lib/courseMeta';
 import Link from 'next/link';
 import AdminShell from '../../_components/AdminShell';
-import { addLessonToCourse, deleteLesson, updateCourseDetails, addModuleToCourse } from '../actions';
+import { addLessonToCourse, deleteLesson, updateCourseDetails, addModuleToCourse, deleteModuleFromCourse } from '../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -154,9 +154,23 @@ export default async function AdminCourseDetails({ params }) {
                       <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#374151', margin: 0 }}>
                         {modOrder === '0' ? 'General' : `Topic: ${mod.title}`}
                       </h3>
-                      <span style={{ fontSize: '0.8rem', color: '#6b7280', backgroundColor: '#e5e7eb', padding: '4px 8px', borderRadius: '12px' }}>
-                        {mod.lessons.length} lessons
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ fontSize: '0.8rem', color: '#6b7280', backgroundColor: '#e5e7eb', padding: '4px 8px', borderRadius: '12px' }}>
+                          {mod.lessons.length} lessons
+                        </span>
+                        {modOrder !== '0' && (
+                          <form action={deleteModuleFromCourse}>
+                            <input type="hidden" name="courseId" value={courseId} />
+                            <input type="hidden" name="moduleSortOrder" value={modOrder} />
+                            <button
+                              type="submit"
+                              style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem', textDecoration: 'underline', padding: 0 }}
+                            >
+                              Delete Topic
+                            </button>
+                          </form>
+                        )}
+                      </div>
                     </div>
 
                     <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>

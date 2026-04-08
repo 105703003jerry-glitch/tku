@@ -127,6 +127,46 @@ export async function addModuleToCourse(formData) {
   }
 }
 
+export async function deleteModuleFromCourse(formData) {
+  try {
+    await checkAdmin();
+    const sql = db.getSql();
+
+    const courseId = formData.get('courseId');
+    const moduleSortOrder = parseInt(formData.get('moduleSortOrder') || 0, 10);
+
+    if (!courseId) {
+      throw new Error('Course ID required');
+    }
+
+    if (!moduleSortOrder) {
+      throw new Error('Topic ID required');
+    }
+
+    await sql.begin(async (tx) => {
+      await tx`
+        UPDATE lessons
+        SET module_sort_order = 0
+        WHERE course_id = ${courseId}
+          AND module_sort_order = ${moduleSortOrder}
+      `;
+
+      await tx`
+        DELETE FROM course_modules
+        WHERE course_id = ${courseId}
+          AND locale = 'zh-TW'
+          AND sort_order = ${moduleSortOrder}
+      `;
+    });
+
+    revalidatePath(`/admin/courses/${courseId}`);
+    return { success: true };
+  } catch (err) {
+    console.error("Delete Module Error:", err);
+    return { success: false, error: err.message };
+  }
+}
+
 export async function addLessonToCourse(formData) {
   try {
     await checkAdmin();
