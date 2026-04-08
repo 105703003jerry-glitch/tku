@@ -209,6 +209,7 @@ export async function createCourse(formData) {
     
     revalidatePath('/admin/courses');
     revalidatePath('/courses');
+    revalidatePath('/dashboard');
     revalidatePath(`/learn/${id}`);
     return { success: true, courseId: id };
   } catch (err) {
@@ -357,6 +358,7 @@ export async function deleteCourse(formData) {
 
     revalidatePath('/admin/courses');
     revalidatePath('/courses');
+    revalidatePath('/dashboard');
     revalidatePath(`/learn/${courseId}`);
     revalidatePath(`/admin/courses/${courseId}`);
     return { success: true };
@@ -421,6 +423,7 @@ export async function updateCourseDetails(formData) {
     revalidatePath(`/admin/courses/${id}`);
     revalidatePath(`/admin/courses`);
     revalidatePath('/courses');
+    revalidatePath('/dashboard');
     revalidatePath(`/learn/${id}`);
     return { success: true };
   } catch (err) {
