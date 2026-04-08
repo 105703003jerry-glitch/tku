@@ -3,6 +3,7 @@ import { LEVEL_OPTIONS, TRACK_OPTIONS, parseTrackLabels } from '@/app/lib/course
 import Link from 'next/link';
 import AdminShell from '../../_components/AdminShell';
 import { addLessonToCourse, deleteLesson, updateCourseDetails, addModuleToCourse, deleteModuleFromCourse } from '../actions';
+import CourseOrganizerClient from './CourseOrganizerClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,26 +53,6 @@ export default async function AdminCourseDetails({ params }) {
 
   const courseTrackLabels = parseTrackLabels(course?.track_label_zh).join(', ');
   const courseDurationHours = Number.parseInt(course?.duration_label, 10);
-
-  // Group lessons by module_sort_order
-  const groupedLessons = {};
-  
-  // Initialize Uncategorized (0)
-  groupedLessons[0] = { title: "Uncategorized Lessons", lessons: [] };
-  
-  // Initialize configured modules
-  modules.forEach(m => {
-    groupedLessons[m.sort_order] = { title: m.title, lessons: [] };
-  });
-
-  // Populate lessons
-  lessons.forEach(l => {
-    if (groupedLessons[l.module_sort_order]) {
-      groupedLessons[l.module_sort_order].lessons.push(l);
-    } else {
-      groupedLessons[0].lessons.push(l); // Fallback if module was deleted
-    }
-  });
 
   return (
     <AdminShell activeMenu="courses">
@@ -141,64 +122,23 @@ export default async function AdminCourseDetails({ params }) {
 
           {/* Main Content Area - Existing Lessons Grouped by Modules */}
           <div style={{ flex: '1 1 600px' }}>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 600, color: '#111827', marginBottom: '16px' }}>Course Modules & Lessons</h2>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              {Object.keys(groupedLessons).sort((a,b)=>parseInt(a)-parseInt(b)).map(modOrder => {
-                const mod = groupedLessons[modOrder];
-                if (modOrder === '0' && mod.lessons.length === 0) return null; // Hide uncategorized if empty
-                
-                return (
-                  <div key={modOrder} style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                    <div style={{ padding: '16px 20px', backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#374151', margin: 0 }}>
-                        {modOrder === '0' ? 'General' : `Topic: ${mod.title}`}
-                      </h3>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '0.8rem', color: '#6b7280', backgroundColor: '#e5e7eb', padding: '4px 8px', borderRadius: '12px' }}>
-                          {mod.lessons.length} lessons
-                        </span>
-                        {modOrder !== '0' && (
-                          <form action={deleteModuleFromCourse}>
-                            <input type="hidden" name="courseId" value={courseId} />
-                            <input type="hidden" name="moduleSortOrder" value={modOrder} />
-                            <button
-                              type="submit"
-                              style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem', textDecoration: 'underline', padding: 0 }}
-                            >
-                              Delete Topic
-                            </button>
-                          </form>
-                        )}
-                      </div>
-                    </div>
-
-                    <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      {mod.lessons.length === 0 ? (
-                        <div style={{ fontSize: '0.9rem', color: '#9ca3af', textAlign: 'center', padding: '12px' }}>No videos attached in this topic yet.</div>
-                      ) : mod.lessons.map((lesson, idx) => (
-                        <div key={lesson.id} style={{ display: 'flex', alignItems: 'center', backgroundColor: '#ffffff', padding: '12px 16px', borderRadius: '8px', border: '1px solid #f3f4f6', gap: '16px' }}>
-                          <div style={{ width: '30px', height: '30px', backgroundColor: '#f3f4f6', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, color: '#374151', fontSize: '0.8rem' }}>
-                            {idx + 1}
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <h4 style={{ fontWeight: 500, color: '#111827', margin: 0, fontSize: '0.95rem' }}>{lesson.title}</h4>
-                            <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '4px 0 0 0' }}>YouTube ID: <span style={{ fontFamily: 'monospace' }}>{lesson.external_video_id}</span></p>
-                          </div>
-                          <div style={{ color: '#ef4444' }}>
-                            <form action={deleteLesson}>
-                              <input type="hidden" name="lessonId" value={lesson.id} />
-                              <input type="hidden" name="courseId" value={courseId} />
-                              <button type="submit" style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem', textDecoration: 'underline', padding: 0 }}>Delete</button>
-                            </form>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <CourseOrganizerClient
+              courseId={courseId}
+              modules={modules.map((module) => ({
+                id: String(module.id),
+                title: module.title,
+                sortOrder: Number(module.sort_order),
+              }))}
+              lessons={lessons.map((lesson) => ({
+                id: String(lesson.id),
+                title: lesson.title,
+                externalVideoId: lesson.external_video_id,
+                moduleSortOrder: Number(lesson.module_sort_order || 0),
+                lessonSortOrder: Number(lesson.lesson_sort_order || 0),
+              }))}
+              deleteLessonAction={deleteLesson}
+              deleteModuleAction={deleteModuleFromCourse}
+            />
           </div>
 
           {/* Sidebars - Add Module & Add Lesson Form */}
