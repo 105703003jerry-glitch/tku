@@ -1,4 +1,5 @@
 import db from '@/api/_lib/db';
+import Link from 'next/link';
 import AdminShell from '../_components/AdminShell';
 import UserMembershipForm from './UserMembershipForm';
 import { ensureUserMembershipSchema, getMembershipTierOption } from '@/app/lib/userMembership';
@@ -52,7 +53,9 @@ export default async function AdminUsersPage() {
                   <tr key={usr.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
                     <td style={{ padding: '16px 24px', fontSize: '0.9rem', color: '#6b7280' }}>#{usr.id}</td>
                     <td style={{ padding: '16px 24px', fontSize: '0.9rem', color: '#111827', fontWeight: 500 }}>
-                      {usr.nickname || usr.name}
+                      <Link href={`/admin/users/${usr.id}`} style={{ color: '#111827', textDecoration: 'none', fontWeight: 600 }}>
+                        {usr.nickname || usr.name}
+                      </Link>
                     </td>
                     <td style={{ padding: '16px 24px', fontSize: '0.9rem', color: '#6b7280' }}>{usr.email}</td>
                     <td style={{ padding: '16px 24px' }}>
