@@ -30,6 +30,19 @@ export async function GET() {
        }
     }
     
+    if (seedSql) {
+       console.log("Running seeds sequentially...");
+       const seedStatements = seedSql.split(';').map(s => s.trim()).filter(s => s.length > 0);
+       for (const stmt of seedStatements) {
+           try {
+               await sql(stmt);
+           } catch (stmtErr) {
+               console.error("Seed statement error:", stmt, stmtErr);
+               throw stmtErr;
+           }
+       }
+    }
+    
     // Some basic seed overrides
     // Create a demo student if not exist
     await sql`
