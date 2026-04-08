@@ -7,6 +7,74 @@ import LearnCourseClient from './LearnCourseClient';
 
 export const dynamic = 'force-dynamic';
 
+function normalizeDateValue(value) {
+  if (!value) {
+    return null;
+  }
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  return String(value);
+}
+
+function serializeUserForClient(user) {
+  if (!user) {
+    return null;
+  }
+
+  return {
+    id: Number.parseInt(user.id, 10) || 0,
+    name: user.name || '',
+    nickname: user.nickname || '',
+    email: user.email || '',
+    role: user.role || 'student',
+    locale: user.locale || null,
+    auth_provider: user.auth_provider || null,
+    avatar_url: user.avatar_url || null,
+    created_at: normalizeDateValue(user.created_at),
+    updated_at: normalizeDateValue(user.updated_at),
+    last_login_at: normalizeDateValue(user.last_login_at),
+  };
+}
+
+function serializeProgressSnapshot(snapshot) {
+  const lessonProgressById = {};
+
+  Object.entries(snapshot?.lessonProgressById || {}).forEach(([lessonId, progress]) => {
+    lessonProgressById[lessonId] = {
+      lessonId: Number.parseInt(progress?.lessonId, 10) || 0,
+      status: progress?.status || 'not_started',
+      completed: Boolean(progress?.completed),
+      progressPercent: Number(progress?.progressPercent || 0),
+      timeSpentSeconds: Number.parseInt(progress?.timeSpentSeconds, 10) || 0,
+      maxPositionSeconds: Number.parseInt(progress?.maxPositionSeconds, 10) || 0,
+      lastPositionSeconds: Number.parseInt(progress?.lastPositionSeconds, 10) || 0,
+      durationSeconds: Number.parseInt(progress?.durationSeconds, 10) || 0,
+      thresholdSeconds: Number.parseInt(progress?.thresholdSeconds, 10) || 0,
+      completionEligible: Boolean(progress?.completionEligible),
+      completedAt: normalizeDateValue(progress?.completedAt),
+      updatedAt: normalizeDateValue(progress?.updatedAt),
+    };
+  });
+
+  return {
+    enrollmentId: snapshot?.enrollmentId ? Number.parseInt(snapshot.enrollmentId, 10) || null : null,
+    summary: {
+      completedLessons: Number.parseInt(snapshot?.summary?.completedLessons, 10) || 0,
+      totalLessons: Number.parseInt(snapshot?.summary?.totalLessons, 10) || 0,
+      progressPercent: Number.parseInt(snapshot?.summary?.progressPercent, 10) || 0,
+      lastActivityAt: normalizeDateValue(snapshot?.summary?.lastActivityAt),
+    },
+    lessonProgressById,
+  };
+}
+
 export default async function LearnCoursePage({ params, searchParams }) {
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
@@ -72,9 +140,9 @@ export default async function LearnCoursePage({ params, searchParams }) {
     <LearnCourseClient
       course={course}
       courseId={courseId}
-      user={user}
+      user={serializeUserForClient(user)}
       initialLessonIndex={activeLessonIndex}
-      initialProgress={progressSnapshot}
+      initialProgress={serializeProgressSnapshot(progressSnapshot)}
       error={error}
     />
   );
