@@ -370,6 +370,8 @@ export async function deleteCourse(formData) {
 }
 
 export async function updateCourseDetails(formData) {
+  let redirectPath = null;
+
   try {
     await checkAdmin();
     const sql = db.getSql();
@@ -427,9 +429,11 @@ export async function updateCourseDetails(formData) {
     revalidatePath('/courses');
     revalidatePath('/dashboard');
     revalidatePath(`/learn/${id}`);
-    redirect(`/admin/courses/${id}`);
+    redirectPath = `/admin/courses/${id}`;
   } catch (err) {
     console.error("Update Course Error:", err);
     return { success: false, error: err.message };
   }
+
+  redirect(redirectPath);
 }
