@@ -1,8 +1,8 @@
 import Link from 'next/link';
 
 // Use the existing DB logic
-import db from '../../../api/_lib/db';
-import courseStore from '../../../api/_lib/courseStore';
+import db from '@/api/_lib/db';
+import courseStore from '@/api/_lib/courseStore';
 
 export default async function CoursesPage() {
   let dbCourses = [];

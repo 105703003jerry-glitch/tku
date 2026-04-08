@@ -1,8 +1,8 @@
 import Link from 'next/link';
 
 // Import existing backend logic dynamically to avoid Next.js client-side errors
-import db from '../../../../api/_lib/db';
-import courseStore from '../../../../api/_lib/courseStore';
+import db from '@/api/_lib/db';
+import courseStore from '@/api/_lib/courseStore';
 
 export default async function LearnCoursePage({ params, searchParams }) {
   const { courseId } = params;
