@@ -1,24 +1,18 @@
-'use client';
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import { performDemoLogin } from './actions';
+import Link from 'next/link';
 
-export default function Login() {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [errorMsg, setErrorMsg] = useState(null);
+export default async function Login({ searchParams }) {
+  const resolvedSearchParams = await searchParams;
+  const errorCode = resolvedSearchParams?.error;
+  const errorMsg = errorCode === 'google_not_configured'
+    ? 'Google sign-in is not configured yet.'
+    : errorCode === 'google_cancelled'
+      ? 'Google sign-in was cancelled.'
+      : errorCode === 'google_state_invalid'
+        ? 'Google sign-in state expired. Please try again.'
+        : errorCode === 'google_failed'
+          ? 'Google sign-in failed. Please try again.'
+          : null;
 
-  const handleLogin = () => {
-    startTransition(async () => {
-      setErrorMsg(null);
-      const res = await performDemoLogin();
-      if (res.success) {
-        router.push('/dashboard');
-      } else {
-        setErrorMsg('Login failed: ' + res.error);
-      }
-    });
-  };
   return (
     <main style={{ minHeight: '100vh', display: 'flex', backgroundColor: 'var(--bg-light)' }}>
       {/* Left side: branding/aesthetic */}
@@ -42,9 +36,9 @@ export default function Login() {
           )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <button onClick={handleLogin} disabled={isPending} className="btn-primary" style={{ width: '100%', padding: '14px', fontSize: '1rem', opacity: isPending ? 0.7 : 1 }}>
-               {isPending ? 'Authenticating...' : 'Continue with Google (Demo Auto-Login)'}
-            </button>
+            <Link href="/api/auth/google?action=start&next=/dashboard" className="btn-primary" style={{ width: '100%', padding: '14px', fontSize: '1rem', textAlign: 'center', textDecoration: 'none' }}>
+               Continue with Google
+            </Link>
           </div>
           
           <div style={{ marginTop: '24px', textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-tertiary)' }}>

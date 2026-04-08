@@ -22,10 +22,10 @@ function clearOAuthCookies(res) {
 }
 
 function normalizeNext(value) {
-    var next = http.sanitize(value, 400) || '/app';
+    var next = http.sanitize(value, 400) || '/dashboard';
 
     if (!next || next.charAt(0) !== '/' || next.indexOf('//') === 0) {
-        return '/app';
+        return '/dashboard';
     }
 
     return next;
