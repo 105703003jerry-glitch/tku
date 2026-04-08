@@ -15,7 +15,7 @@ export default async function AdminShell({ children, activeMenu }) {
       {/* Dark Sidebar */}
       <aside style={{ width: '260px', backgroundColor: '#111827', color: 'white', borderRight: '1px solid #1f2937', padding: '24px', display: 'flex', flexDirection: 'column' }}>
         <div style={{ marginBottom: '40px' }}>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--brand-primary)' }}>Pandoo Operator</h2>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--brand-primary)' }}>TKUCLCLAB Operator</h2>
           <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '4px' }}>System Control Panel</div>
         </div>
         

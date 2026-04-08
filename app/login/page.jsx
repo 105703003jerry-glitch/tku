@@ -17,9 +17,9 @@ export default async function Login({ searchParams }) {
     <main style={{ minHeight: '100vh', display: 'flex', backgroundColor: 'var(--bg-light)' }}>
       {/* Left side: branding/aesthetic */}
       <div style={{ flex: 1, backgroundColor: 'var(--brand-secondary)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px' }}>
-        <h1 style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--brand-primary)', marginBottom: '16px' }}>Pandoo LMS Workspace</h1>
+        <h1 style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--brand-primary)', marginBottom: '16px' }}>TKUCLCLAB Learning Portal</h1>
         <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', maxWidth: '400px' }}>
-          Enter the full learning platform. Videos, AI tutoring, and progress tracking all in one beautifully designed place.
+          Enter the full TKUCLCLAB learning platform. Courses, video lessons, AI tutoring, and progress tracking all in one place.
         </p>
       </div>
 

@@ -84,7 +84,7 @@ export default async function Dashboard() {
       {/* Sidebar */}
       <aside style={{ width: '260px', backgroundColor: 'var(--bg-card)', borderRight: '1px solid var(--border-light)', padding: '24px', display: 'flex', flexDirection: 'column' }}>
         <div style={{ marginBottom: '40px' }}>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--brand-primary)' }}>Pandoo LMS</h2>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--brand-primary)' }}>TKUCLCLAB</h2>
         </div>
         
         <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>

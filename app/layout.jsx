@@ -1,8 +1,8 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'Pandoo LMS - TKCLCLAB',
-  description: 'Clean, modern learning management system.',
+  title: 'TKUCLCLAB',
+  description: 'TKUCLCLAB learning platform for Mandarin courses, video lessons, and AI-supported study.',
 };
 
 export default function RootLayout({ children }) {

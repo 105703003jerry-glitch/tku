@@ -27,7 +27,7 @@ export default function AdminLogin() {
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px', justifyContent: 'center' }}>
             <div style={{ width: '32px', height: '32px', backgroundColor: 'var(--brand-primary)', borderRadius: '8px' }}></div>
-            <h1 style={{ fontSize: '1.8rem', fontWeight: 700, margin: 0 }}>Pandoo Operator</h1>
+            <h1 style={{ fontSize: '1.8rem', fontWeight: 700, margin: 0 }}>TKUCLCLAB Operator</h1>
           </div>
 
           <p style={{ color: '#9ca3af', marginBottom: '32px', textAlign: 'center' }}>Restricted Access. Admins only.</p>
