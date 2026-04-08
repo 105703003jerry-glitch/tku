@@ -3,6 +3,7 @@ import Link from 'next/link';
 import AdminShell from '../_components/AdminShell';
 import UserMembershipForm from './UserMembershipForm';
 import { ensureUserMembershipSchema, getMembershipTierOption } from '@/app/lib/userMembership';
+import { formatTaipeiDate } from '@/app/lib/dateTime';
 
 export default async function AdminUsersPage() {
   let usersList = [];
@@ -86,7 +87,7 @@ export default async function AdminUsersPage() {
                       </div>
                     </td>
                     <td style={{ padding: '16px 24px', fontSize: '0.9rem', color: '#6b7280' }}>
-                      {new Date(usr.created_at).toLocaleDateString()}
+                      {formatTaipeiDate(usr.created_at)}
                     </td>
                   </tr>
                 );

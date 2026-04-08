@@ -4,18 +4,7 @@ import AdminShell from '../../_components/AdminShell';
 import { ensureUserMembershipSchema, getMembershipTierOption } from '@/app/lib/userMembership';
 import { ensureLearningProgressSchema, calculateCompletionThreshold } from '@/app/lib/learningProgress';
 import { getTrackOptionByKey } from '@/app/lib/courseMeta';
-
-function formatDateTime(value) {
-  if (!value) {
-    return 'Not yet';
-  }
-
-  try {
-    return new Date(value).toLocaleString('zh-TW');
-  } catch {
-    return 'Not yet';
-  }
-}
+import { formatTaipeiDateTime } from '@/app/lib/dateTime';
 
 function formatDuration(seconds) {
   const totalSeconds = Math.max(0, Number.parseInt(seconds, 10) || 0);
@@ -195,7 +184,7 @@ export default async function AdminUserDetailsPage({ params }) {
                 <div>
                   <h1 style={{ fontSize: '2rem', fontWeight: 700, color: '#111827', marginBottom: '8px' }}>{user.nickname || user.name}</h1>
                   <p style={{ color: '#6b7280', marginBottom: '6px' }}>{user.email}</p>
-                  <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>Joined {formatDateTime(user.created_at)}</p>
+                  <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>Joined {formatTaipeiDateTime(user.created_at)}</p>
                 </div>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
                   <span style={{ padding: '6px 10px', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 700, backgroundColor: user.role === 'admin' ? '#dbeafe' : '#f3f4f6', color: user.role === 'admin' ? '#1e40af' : '#4b5563' }}>
@@ -232,12 +221,12 @@ export default async function AdminUserDetailsPage({ params }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div>
                   <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginBottom: '4px' }}>Last Login</div>
-                  <div style={{ fontSize: '0.95rem', color: '#111827', fontWeight: 600 }}>{formatDateTime(user.last_login_at)}</div>
+                  <div style={{ fontSize: '0.95rem', color: '#111827', fontWeight: 600 }}>{formatTaipeiDateTime(user.last_login_at)}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginBottom: '4px' }}>Most Recent Learning Activity</div>
                   <div style={{ fontSize: '0.95rem', color: '#111827', fontWeight: 600 }}>
-                    {enrolledCourses[0]?.lastActivityAt ? formatDateTime(enrolledCourses[0].lastActivityAt) : 'No course activity yet'}
+                    {enrolledCourses[0]?.lastActivityAt ? formatTaipeiDateTime(enrolledCourses[0].lastActivityAt) : 'No course activity yet'}
                   </div>
                 </div>
                 <div>
@@ -286,8 +275,8 @@ export default async function AdminUserDetailsPage({ params }) {
                           </div>
                           <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#111827', marginBottom: '6px' }}>{course.title}</h3>
                           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', color: '#64748b', fontSize: '0.84rem' }}>
-                            <span>Enrolled: {formatDateTime(course.enrolledAt)}</span>
-                            <span>Last activity: {formatDateTime(course.lastActivityAt)}</span>
+                            <span>Enrolled: {formatTaipeiDateTime(course.enrolledAt)}</span>
+                            <span>Last activity: {formatTaipeiDateTime(course.lastActivityAt)}</span>
                             <span>{course.completedLessons}/{course.totalLessons} lessons</span>
                           </div>
                         </div>
@@ -341,8 +330,8 @@ export default async function AdminUserDetailsPage({ params }) {
                                       <span>Watched: {formatDuration(lesson.maxPositionSeconds)}</span>
                                       <span>Time spent: {formatDuration(lesson.timeSpentSeconds)}</span>
                                       <span>80% gate: {formatDuration(lesson.thresholdSeconds)}</span>
-                                      <span>Last update: {formatDateTime(lesson.updatedAt)}</span>
-                                      <span>Completed at: {formatDateTime(lesson.completedAt)}</span>
+                                      <span>Last update: {formatTaipeiDateTime(lesson.updatedAt)}</span>
+                                      <span>Completed at: {formatTaipeiDateTime(lesson.completedAt)}</span>
                                     </div>
                                   </div>
                                 </div>
