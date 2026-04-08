@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS users (
     avatar_url TEXT,
     last_login_at TIMESTAMPTZ,
     role VARCHAR(20) NOT NULL DEFAULT 'student',
+    membership_tier VARCHAR(20) NOT NULL DEFAULT 'free',
     locale VARCHAR(20),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -39,9 +40,11 @@ ALTER TABLE users
     ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(20) NOT NULL DEFAULT 'password',
     ADD COLUMN IF NOT EXISTS google_sub VARCHAR(255),
     ADD COLUMN IF NOT EXISTS avatar_url TEXT,
-    ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
+    ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS membership_tier VARCHAR(20) NOT NULL DEFAULT 'free';
 
 CREATE INDEX IF NOT EXISTS users_role_idx ON users (role);
+CREATE INDEX IF NOT EXISTS users_membership_tier_idx ON users (membership_tier);
 CREATE UNIQUE INDEX IF NOT EXISTS users_google_sub_unique_idx
     ON users (google_sub)
     WHERE google_sub IS NOT NULL;

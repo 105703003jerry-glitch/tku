@@ -188,6 +188,7 @@ async function handleCallback(req, res) {
             google_sub,
             avatar_url,
             role,
+            membership_tier,
             locale,
             last_login_at,
             updated_at
@@ -199,6 +200,7 @@ async function handleCallback(req, res) {
             ${profile.sub},
             ${http.sanitize(profile.picture, 500) || null},
             ${role},
+            'free',
             ${http.sanitize(profile.locale, 20) || null},
             NOW(),
             NOW()
@@ -210,10 +212,11 @@ async function handleCallback(req, res) {
             google_sub = EXCLUDED.google_sub,
             avatar_url = EXCLUDED.avatar_url,
             role = ${role},
+            membership_tier = COALESCE(users.membership_tier, 'free'),
             locale = COALESCE(EXCLUDED.locale, users.locale),
             last_login_at = NOW(),
             updated_at = NOW()
-        RETURNING id, name, email, role, locale, auth_provider, avatar_url, created_at
+        RETURNING id, name, email, role, membership_tier, locale, auth_provider, avatar_url, created_at
     `;
 
     session = await auth.createSession(sql, rows[0].id, {
