@@ -2,7 +2,6 @@ import Link from 'next/link';
 import db from '@/api/_lib/db';
 import courseStore from '@/api/_lib/courseStore';
 import { getAuthUser } from '@/app/lib/authSession';
-import { ensureEnrollment, getCourseProgressSnapshot } from '@/app/lib/learningProgress';
 import LearnCourseClient from './LearnCourseClient';
 
 export const dynamic = 'force-dynamic';
@@ -23,23 +22,15 @@ function normalizeDateValue(value) {
   return String(value);
 }
 
-function serializeUserForClient(user) {
+function serializeViewerForClient(user) {
   if (!user) {
     return null;
   }
 
   return {
-    id: Number.parseInt(user.id, 10) || 0,
     name: user.name || '',
     nickname: user.nickname || '',
-    email: user.email || '',
-    role: user.role || 'student',
-    locale: user.locale || null,
-    auth_provider: user.auth_provider || null,
     avatar_url: user.avatar_url || null,
-    created_at: normalizeDateValue(user.created_at),
-    updated_at: normalizeDateValue(user.updated_at),
-    last_login_at: normalizeDateValue(user.last_login_at),
   };
 }
 
@@ -81,17 +72,14 @@ export default async function LearnCoursePage({ params, searchParams }) {
   const { courseId } = resolvedParams;
   let course = null;
   let error = null;
-  let user = await getAuthUser();
+  let viewer = null;
   let sql;
-  let progressSnapshot = {
-    summary: {
-      completedLessons: 0,
-      totalLessons: 0,
-      progressPercent: 0,
-      lastActivityAt: null,
-    },
-    lessonProgressById: {},
-  };
+
+  try {
+    viewer = serializeViewerForClient(await getAuthUser());
+  } catch (err) {
+    console.error("Learn page auth lookup error:", err);
+  }
 
   try {
     sql = db.getSql();
@@ -102,15 +90,6 @@ export default async function LearnCoursePage({ params, searchParams }) {
   } catch (err) {
     console.error("Learn page course fetch error:", err);
     error = "Database connection not configured or failed. Showing placeholder.";
-  }
-
-  if (user && course && sql) {
-    try {
-      await ensureEnrollment(sql, user.id, courseId);
-      progressSnapshot = await getCourseProgressSnapshot(sql, user.id, courseId);
-    } catch (err) {
-      console.error("Learn page enrollment sync error:", err);
-    }
   }
 
   // Keep placeholders only for DB failures so empty DB states remain visible.
@@ -140,9 +119,10 @@ export default async function LearnCoursePage({ params, searchParams }) {
     <LearnCourseClient
       course={course}
       courseId={courseId}
-      user={serializeUserForClient(user)}
+      isAuthenticated={Boolean(viewer)}
+      viewer={viewer}
       initialLessonIndex={activeLessonIndex}
-      initialProgress={serializeProgressSnapshot(progressSnapshot)}
+      initialProgress={serializeProgressSnapshot(null)}
       error={error}
     />
   );

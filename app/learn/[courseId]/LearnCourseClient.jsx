@@ -102,7 +102,8 @@ function loadYouTubeApi() {
 export default function LearnCourseClient({
   course,
   courseId,
-  user,
+  isAuthenticated,
+  viewer,
   initialLessonIndex,
   initialProgress,
   error,
@@ -141,6 +142,42 @@ export default function LearnCourseClient({
   useEffect(() => {
     setSelectedLessonIndex(initialLessonIndex);
   }, [initialLessonIndex, courseId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!isAuthenticated) {
+      setSummary((currentSummary) => ({
+        ...currentSummary,
+        totalLessons: lessons.length,
+      }));
+      return undefined;
+    }
+
+    async function loadProgress() {
+      try {
+        const response = await fetch(`/api/learn/progress?courseId=${encodeURIComponent(courseId)}`, {
+          cache: 'no-store',
+        });
+        const payload = await response.json();
+
+        if (cancelled || !response.ok) {
+          return;
+        }
+
+        setSummary(payload.summary);
+        setLessonProgressById(payload.lessonProgressById || {});
+      } catch (loadError) {
+        console.error('Initial progress load error:', loadError);
+      }
+    }
+
+    loadProgress();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [courseId, isAuthenticated, lessons.length]);
 
   useEffect(() => {
     if (!activeLesson?.externalVideoId || !playerContainerRef.current) {
@@ -441,7 +478,7 @@ export default function LearnCourseClient({
                   <h2 style={{ fontSize: '1.8rem', fontWeight: 600, marginBottom: '12px', lineHeight: 1.3 }}>{activeLesson?.title}</h2>
                 </div>
 
-                {user && activeLesson && activeLessonProgress && (
+                {isAuthenticated && activeLesson && activeLessonProgress && (
                   <button
                     type="button"
                     onClick={handleMarkCompleted}
@@ -507,9 +544,9 @@ export default function LearnCourseClient({
 
           <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', gap: '12px' }}>
-              <div style={{ width: '28px', height: '28px', backgroundColor: 'var(--brand-primary)', borderRadius: '4px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.7rem' }}>AI</div>
+                <div style={{ width: '28px', height: '28px', backgroundColor: 'var(--brand-primary)', borderRadius: '4px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.7rem' }}>AI</div>
               <div style={{ backgroundColor: '#f2f2f7', padding: '12px 16px', borderRadius: '0px 12px 12px 12px', fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>
-                Hello {user?.nickname?.split(' ')[0] || 'there'}! I&apos;m your tutor for <strong>&quot;{activeLesson?.title || 'this course'}&quot;</strong>.
+                Hello {typeof viewer?.nickname === 'string' && viewer.nickname ? viewer.nickname.split(' ')[0] : (typeof viewer?.name === 'string' && viewer.name ? viewer.name.split(' ')[0] : 'there')}! I&apos;m your tutor for <strong>&quot;{activeLesson?.title || 'this course'}&quot;</strong>.
                 <br />
                 <br />
                 Once you reach 80% playback, you can mark the lesson as completed.
