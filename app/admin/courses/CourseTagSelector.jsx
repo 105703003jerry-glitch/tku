@@ -44,6 +44,14 @@ export default function CourseTagSelector({ initialOptions = [], initialSelected
     () => [...options].sort((left, right) => left.label_zh.localeCompare(right.label_zh, 'zh-Hant')),
     [options]
   );
+  const selectedOptions = useMemo(
+    () => sortedOptions.filter((option) => selectedKeys.includes(option.key)),
+    [selectedKeys, sortedOptions]
+  );
+  const unselectedOptions = useMemo(
+    () => sortedOptions.filter((option) => !selectedKeys.includes(option.key)),
+    [selectedKeys, sortedOptions]
+  );
 
   const toggleKey = (key) => {
     setSelectedKeys((currentKeys) => (
@@ -119,30 +127,26 @@ export default function CourseTagSelector({ initialOptions = [], initialSelected
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <input type="hidden" name="courseTagKeys" value={JSON.stringify(selectedKeys)} />
 
-      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-        {sortedOptions.map((option) => {
-          const selected = selectedKeys.includes(option.key);
-
-          return (
-            <div key={option.key} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 10px', borderRadius: '999px', border: selected ? '1px solid #2563eb' : '1px solid #d1d5db', backgroundColor: selected ? '#dbeafe' : '#ffffff' }}>
-              <button
-                type="button"
-                onClick={() => toggleKey(option.key)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: selected ? '#1d4ed8' : '#374151', fontSize: '0.82rem', fontWeight: 600, padding: 0 }}
-              >
-                {option.label_zh}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDelete(option.key)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '0.78rem', padding: 0 }}
-                aria-label={`Delete ${option.label_zh}`}
-              >
-                ×
-              </button>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <span style={{ fontSize: '0.76rem', fontWeight: 600, color: '#4b5563' }}>已選 hashtags</span>
+        <div style={{ minHeight: '44px', padding: '10px 12px', border: '1px solid #dbe3f0', borderRadius: '10px', backgroundColor: '#f8fafc' }}>
+          {selectedOptions.length > 0 ? (
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {selectedOptions.map((option) => (
+                <button
+                  key={option.key}
+                  type="button"
+                  onClick={() => toggleKey(option.key)}
+                  style={{ padding: '7px 10px', borderRadius: '999px', border: '1px solid #2563eb', backgroundColor: '#dbeafe', color: '#1d4ed8', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}
+                >
+                  #{option.label_zh}
+                </button>
+              ))}
             </div>
-          );
-        })}
+          ) : (
+            <span style={{ fontSize: '0.82rem', color: '#94a3b8' }}>尚未選擇任何 hashtag</span>
+          )}
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -163,8 +167,37 @@ export default function CourseTagSelector({ initialOptions = [], initialSelected
         </button>
       </div>
 
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <span style={{ fontSize: '0.76rem', fontWeight: 600, color: '#4b5563' }}>可選 hashtags</span>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '10px', backgroundColor: '#ffffff' }}>
+          {unselectedOptions.length > 0 ? (
+            unselectedOptions.map((option) => (
+              <div key={option.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '8px 10px', borderRadius: '10px', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb' }}>
+                <button
+                  type="button"
+                  onClick={() => toggleKey(option.key)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#374151', fontSize: '0.82rem', fontWeight: 600, padding: 0, textAlign: 'left', flex: 1 }}
+                >
+                  #{option.label_zh}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(option.key)}
+                  style={{ padding: '4px 8px', borderRadius: '999px', border: '1px solid #fecaca', backgroundColor: '#fef2f2', color: '#dc2626', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, whiteSpace: 'nowrap' }}
+                  aria-label={`Delete ${option.label_zh}`}
+                >
+                  刪除
+                </button>
+              </div>
+            ))
+          ) : (
+            <span style={{ fontSize: '0.82rem', color: '#94a3b8' }}>目前沒有其他可選 hashtag</span>
+          )}
+        </div>
+      </div>
+
       <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>
-        可複選多個 hashtags。新增後會變成下次可直接選擇的固定選項，也可以刪除不再使用的項目。
+        可複選多個 hashtags。點選上方已選標籤可取消；下方可新增、再次選取，也可以直接刪除不再使用的項目。
       </span>
 
       {error && (

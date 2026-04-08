@@ -118,16 +118,16 @@ export default function NewCoursePage() {
           </div>
 
           <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-            <div style={{ flex: '1 1 380px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>課程 Hashtags</label>
-              <CourseTagSelector />
-            </div>
-
             <div style={{ flex: '0 0 180px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>總時數</label>
               <input name="durationHours" required min="1" type="number" defaultValue="40" placeholder="40" style={{ padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', width: '100%' }} />
               <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>前台會顯示成 `40 hours`。</span>
             </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>課程 Hashtags</label>
+            <CourseTagSelector />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

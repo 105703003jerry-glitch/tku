@@ -90,7 +90,7 @@ export default async function AdminCourseDetails({ params, searchParams }) {
                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Title (zh-TW)</label>
                <input name="title" defaultValue={course.title} required style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
             </div>
-            <div style={{ flex: '1 1 220px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Track Category</label>
                <select name="trackKey" defaultValue={getTrackOptionByKey(course.track_key).key} style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px', backgroundColor: 'white' }}>
                   {TRACK_OPTIONS.map((option) => (
@@ -113,13 +113,13 @@ export default async function AdminCourseDetails({ params, searchParams }) {
                   <option value="published">Published</option>
                </select>
             </div>
-            <div style={{ flex: '1 1 220px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-               <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>課程 Hashtags</label>
-               <CourseTagSelector initialOptions={courseTagOptions} initialSelectedKeys={selectedCourseTagKeys} />
-            </div>
             <div style={{ flex: '1 1 140px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Hours</label>
                <input name="durationHours" type="number" min="1" defaultValue={Number.isFinite(courseDurationHours) ? courseDurationHours : 40} style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+            </div>
+            <div style={{ flex: '1 1 100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+               <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>課程 Hashtags</label>
+               <CourseTagSelector initialOptions={courseTagOptions} initialSelectedKeys={selectedCourseTagKeys} />
             </div>
             <div style={{ flex: '1 1 100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Description (zh-TW)</label>
