@@ -19,7 +19,7 @@ export async function GET() {
     
     if (schemaSql) {
        console.log("Running schema...");
-       await sql.unsafe(schemaSql);
+       await sql(schemaSql);
     }
     
     // Some basic seed overrides
