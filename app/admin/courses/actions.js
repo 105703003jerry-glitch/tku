@@ -43,6 +43,35 @@ export async function createCourse(formData) {
   }
 }
 
+export async function addModuleToCourse(formData) {
+  try {
+    await checkAdmin();
+    const sql = db.getSql();
+    
+    const courseId = formData.get('courseId');
+    const title = formData.get('title');
+    
+    // Determine next module sort order
+    const countRes = await sql`SELECT COUNT(id) FROM course_modules WHERE course_id = ${courseId} AND locale = 'zh-TW'`;
+    // We multiply by 10 so orders are 10, 20, 30... for easier manual reordering if needed later
+    const nextOrder = (parseInt(countRes[0].count, 10) + 1) * 10;
+    
+    await sql`
+      INSERT INTO course_modules (
+        course_id, locale, sort_order, title
+      ) VALUES (
+        ${courseId}, 'zh-TW', ${nextOrder}, ${title}
+      )
+    `;
+    
+    revalidatePath(`/admin/courses/${courseId}`);
+    return { success: true };
+  } catch (err) {
+    console.error("Add Module Error:", err);
+    return { success: false, error: err.message };
+  }
+}
+
 export async function addLessonToCourse(formData) {
   try {
     await checkAdmin();
@@ -51,10 +80,11 @@ export async function addLessonToCourse(formData) {
     const courseId = formData.get('courseId');
     const title = formData.get('title');
     const externalVideoId = formData.get('externalVideoId');
+    const moduleSortOrder = parseInt(formData.get('moduleSortOrder') || 0, 10);
     
-    // 1. Determine next lesson order ID
-    const countRes = await sql`SELECT COUNT(id) FROM lessons WHERE course_id = ${courseId}`;
-    const nextOrder = parseInt(countRes[0].count, 10);
+    // 1. Determine next lesson order ID within the module
+    const countRes = await sql`SELECT COUNT(id) FROM lessons WHERE course_id = ${courseId} AND module_sort_order = ${moduleSortOrder}`;
+    const nextOrder = (parseInt(countRes[0].count, 10) + 1) * 10;
     
     // 2. Insert into lessons
     await sql`
@@ -62,7 +92,7 @@ export async function addLessonToCourse(formData) {
         course_id, locale, module_sort_order, lesson_sort_order, 
         title, lesson_type, external_video_id
       ) VALUES (
-        ${courseId}, 'zh-TW', 0, ${nextOrder}, 
+        ${courseId}, 'zh-TW', ${moduleSortOrder}, ${nextOrder}, 
         ${title}, 'video', ${externalVideoId}
       )
     `;

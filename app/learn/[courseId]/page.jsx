@@ -3,6 +3,8 @@ import db from '@/api/_lib/db';
 import courseStore from '@/api/_lib/courseStore';
 import { getAuthUser } from '@/app/lib/authSession';
 
+export const dynamic = 'force-dynamic';
+
 export default async function LearnCoursePage({ params, searchParams }) {
   const { courseId } = params;
   let course = null;
@@ -60,43 +62,66 @@ export default async function LearnCoursePage({ params, searchParams }) {
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         
         {/* LEFT COLUMN: Playlist / Modules Sidebar (20%) */}
-        <aside style={{ width: '280px', backgroundColor: '#ffffff', borderRight: '1px solid var(--border-light)', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+        <aside style={{ width: '280px', minWidth: '280px', backgroundColor: '#ffffff', borderRight: '1px solid var(--border-light)', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
           <div style={{ padding: '24px 20px', borderBottom: '1px solid var(--border-light)' }}>
             <h2 style={{ fontSize: '1.05rem', fontWeight: 600, marginBottom: '8px' }}>Course Content</h2>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
-              <span>{activeLessonIndex}/{lessons.length}</span>
-              <span>{Math.round((activeLessonIndex/lessons.length)*100) || 0}%</span>
+              <span>{activeLessonIndex + 1}/{lessons.length}</span>
+              <span>{Math.round(((activeLessonIndex) / Math.max(1, lessons.length - 1)) * 100) || 0}%</span>
             </div>
             <div style={{ width: '100%', height: '4px', backgroundColor: 'var(--border-light)', borderRadius: '2px', overflow: 'hidden', marginTop: '8px' }}>
-              <div style={{ width: `${(activeLessonIndex/lessons.length)*100}%`, height: '100%', backgroundColor: 'var(--brand-primary)', borderRadius: '2px', transition: 'width 0.3s' }}></div>
+              <div style={{ width: `${((activeLessonIndex) / Math.max(1, lessons.length - 1)) * 100}%`, height: '100%', backgroundColor: 'var(--brand-primary)', borderRadius: '2px', transition: 'width 0.3s' }}></div>
             </div>
           </div>
           
-          <div style={{ padding: '12px', flex: 1 }}>
-            {lessons.map((lesson, index) => {
-              const isActive = index === activeLessonIndex;
-              return (
-                <Link href={`/learn/${courseId}?lesson=${index}`} key={index} style={{ textDecoration: 'none', color: 'inherit', display: 'block', marginBottom: '8px' }}>
-                  <div style={{ padding: '12px', borderRadius: 'var(--radius-sm)', backgroundColor: isActive ? 'var(--brand-secondary)' : '#ffffff', border: isActive ? '1px solid var(--brand-primary)' : '1px solid transparent', cursor: 'pointer', transition: 'all 0.2s', alignContent: 'center' }}>
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                      <span style={{ color: isActive ? 'var(--brand-primary)' : 'var(--text-tertiary)', fontSize: '0.9rem', marginTop: '2px' }}>
-                        {isActive ? '▶' : (index < activeLessonIndex ? '✓' : '○')}
-                      </span>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '0.9rem', fontWeight: isActive ? 600 : 500, color: isActive ? 'var(--brand-primary)' : 'inherit', lineHeight: 1.4 }}>
-                          {index + 1}. {lesson.title}
-                        </span>
-                        {lesson.durationSeconds && (
-                           <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>
-                             {Math.round(lesson.durationSeconds/60)} min
-                           </span>
-                        )}
-                      </div>
+          <div style={{ flex: 1 }}>
+            {(() => {
+              // Group lessons for sidebar
+              const grouped = { 0: { title: "General Overview", items: [] } };
+              course?.modules?.['zh-TW']?.forEach(m => {
+                grouped[m.sortOrder] = { title: m.title, items: [] };
+              });
+              
+              lessons.forEach((lesson, absIdx) => {
+                const mo = lesson.moduleSortOrder || 0;
+                if (!grouped[mo]) grouped[mo] = { title: "Uncategorized", items: [] };
+                grouped[mo].items.push({ lesson, absIdx });
+              });
+
+              return Object.keys(grouped).sort((a,b)=>parseInt(a)-parseInt(b)).map(modOrder => {
+                const group = grouped[modOrder];
+                if (group.items.length === 0) return null;
+                
+                return (
+                  <div key={modOrder} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                    <div style={{ padding: '12px 20px', backgroundColor: '#f9fafb', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      {group.title}
+                    </div>
+                    <div style={{ padding: '8px 12px' }}>
+                      {group.items.map(({ lesson, absIdx }) => {
+                        const isActive = absIdx === activeLessonIndex;
+                        return (
+                          <Link href={`/learn/${courseId}?lesson=${absIdx}`} key={absIdx} style={{ textDecoration: 'none', color: 'inherit', display: 'block', marginBottom: '4px' }}>
+                            <div style={{ padding: '10px 12px', borderRadius: 'var(--radius-sm)', backgroundColor: isActive ? 'var(--brand-secondary)' : '#ffffff', border: isActive ? '1px solid var(--brand-primary)' : '1px solid transparent', cursor: 'pointer', transition: 'all 0.2s', alignContent: 'center' }}>
+                              <div style={{ display: 'flex', gap: '10px' }}>
+                                <span style={{ color: isActive ? 'var(--brand-primary)' : 'var(--text-tertiary)', fontSize: '0.85rem', marginTop: '2px' }}>
+                                  {isActive ? '▶' : (absIdx < activeLessonIndex ? '✓' : '○')}
+                                </span>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                  <span style={{ fontSize: '0.85rem', fontWeight: isActive ? 600 : 500, color: isActive ? 'var(--brand-primary)' : 'inherit', lineHeight: 1.4 }}>
+                                    {lesson.title}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </Link>
+                        );
+                      })}
                     </div>
                   </div>
-                </Link>
-              );
-            })}
+                );
+              });
+            })()}
           </div>
         </aside>
 

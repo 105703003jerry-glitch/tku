@@ -1,12 +1,15 @@
 import db from '@/api/_lib/db';
 import Link from 'next/link';
 import AdminShell from '../../_components/AdminShell';
-import { addLessonToCourse, deleteLesson, updateCourseDetails } from '../actions';
+import { addLessonToCourse, deleteLesson, updateCourseDetails, addModuleToCourse } from '../actions';
+
+export const dynamic = 'force-dynamic';
 
 export default async function AdminCourseDetails({ params }) {
   const { courseId } = params;
   let course = null;
   let lessons = [];
+  let modules = [];
   let error = null;
 
   try {
@@ -22,12 +25,18 @@ export default async function AdminCourseDetails({ params }) {
 
     if (courseRes.length > 0) course = courseRes[0];
 
-    // Get Lessons
+    // Get Modules and Lessons
     if (course) {
+      modules = await sql`
+        SELECT * FROM course_modules
+        WHERE course_id = ${courseId} AND locale = 'zh-TW'
+        ORDER BY sort_order ASC
+      `;
+
       lessons = await sql`
         SELECT * FROM lessons 
         WHERE course_id = ${courseId} 
-        ORDER BY lesson_sort_order ASC
+        ORDER BY module_sort_order ASC, lesson_sort_order ASC
       `;
     }
   } catch (err) {
@@ -38,6 +47,26 @@ export default async function AdminCourseDetails({ params }) {
   if (!course && !error) {
     return <AdminShell><div style={{ padding: '40px' }}>Course not found: {courseId}</div></AdminShell>;
   }
+
+  // Group lessons by module_sort_order
+  const groupedLessons = {};
+  
+  // Initialize Uncategorized (0)
+  groupedLessons[0] = { title: "Uncategorized Lessons", lessons: [] };
+  
+  // Initialize configured modules
+  modules.forEach(m => {
+    groupedLessons[m.sort_order] = { title: m.title, lessons: [] };
+  });
+
+  // Populate lessons
+  lessons.forEach(l => {
+    if (groupedLessons[l.module_sort_order]) {
+      groupedLessons[l.module_sort_order].lessons.push(l);
+    } else {
+      groupedLessons[0].lessons.push(l); // Fallback if module was deleted
+    }
+  });
 
   return (
     <AdminShell activeMenu="courses">
@@ -79,66 +108,109 @@ export default async function AdminCourseDetails({ params }) {
       {error ? (
         <div style={{ padding: '16px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '8px' }}>{error}</div>
       ) : (
-        <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
 
-          {/* Main Content Area - Existing Lessons */}
-          <div style={{ flex: 2 }}>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 600, color: '#111827', marginBottom: '16px' }}>Configured Lessons</h2>
+          {/* Main Content Area - Existing Lessons Grouped by Modules */}
+          <div style={{ flex: '1 1 600px' }}>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 600, color: '#111827', marginBottom: '16px' }}>Course Modules & Lessons</h2>
 
-            {lessons.length === 0 ? (
-              <div style={{ padding: '40px', backgroundColor: 'white', borderRadius: '12px', border: '1px dashed #d1d5db', textAlign: 'center', color: '#6b7280' }}>
-                No lessons found. Add your first YouTube video using the panel.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {lessons.map((lesson, idx) => (
-                  <div key={lesson.id} style={{ display: 'flex', alignItems: 'center', backgroundColor: 'white', padding: '16px', borderRadius: '12px', border: '1px solid #e5e7eb', gap: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                    <div style={{ width: '40px', height: '40px', backgroundColor: '#f3f4f6', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, color: '#374151' }}>
-                      {idx + 1}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {Object.keys(groupedLessons).sort((a,b)=>parseInt(a)-parseInt(b)).map(modOrder => {
+                const mod = groupedLessons[modOrder];
+                if (modOrder === '0' && mod.lessons.length === 0) return null; // Hide uncategorized if empty
+                
+                return (
+                  <div key={modOrder} style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                    <div style={{ padding: '16px 20px', backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#374151', margin: 0 }}>
+                        {modOrder === '0' ? 'General' : `Topic: ${mod.title}`}
+                      </h3>
+                      <span style={{ fontSize: '0.8rem', color: '#6b7280', backgroundColor: '#e5e7eb', padding: '4px 8px', borderRadius: '12px' }}>
+                        {mod.lessons.length} lessons
+                      </span>
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <h4 style={{ fontWeight: 600, color: '#111827', marginBottom: '4px' }}>{lesson.title}</h4>
-                      <p style={{ fontSize: '0.8rem', color: '#6b7280' }}>YouTube ID: <span style={{ fontFamily: 'monospace' }}>{lesson.external_video_id}</span></p>
-                    </div>
-                    <div style={{ color: '#9ca3af', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                      <span>{lesson.lesson_type}</span>
-                      <form action={deleteLesson}>
-                        <input type="hidden" name="lessonId" value={lesson.id} />
-                        <input type="hidden" name="courseId" value={courseId} />
-                        <button type="submit" style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem', textDecoration: 'underline', padding: 0 }}>Delete</button>
-                      </form>
+
+                    <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {mod.lessons.length === 0 ? (
+                        <div style={{ fontSize: '0.9rem', color: '#9ca3af', textAlign: 'center', padding: '12px' }}>No videos attached in this topic yet.</div>
+                      ) : mod.lessons.map((lesson, idx) => (
+                        <div key={lesson.id} style={{ display: 'flex', alignItems: 'center', backgroundColor: '#ffffff', padding: '12px 16px', borderRadius: '8px', border: '1px solid #f3f4f6', gap: '16px' }}>
+                          <div style={{ width: '30px', height: '30px', backgroundColor: '#f3f4f6', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, color: '#374151', fontSize: '0.8rem' }}>
+                            {idx + 1}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <h4 style={{ fontWeight: 500, color: '#111827', margin: 0, fontSize: '0.95rem' }}>{lesson.title}</h4>
+                            <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '4px 0 0 0' }}>YouTube ID: <span style={{ fontFamily: 'monospace' }}>{lesson.external_video_id}</span></p>
+                          </div>
+                          <div style={{ color: '#ef4444' }}>
+                            <form action={deleteLesson}>
+                              <input type="hidden" name="lessonId" value={lesson.id} />
+                              <input type="hidden" name="courseId" value={courseId} />
+                              <button type="submit" style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem', textDecoration: 'underline', padding: 0 }}>Delete</button>
+                            </form>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                );
+              })}
+            </div>
           </div>
 
-          {/* Sidebar - Add Lesson Form */}
-          <div style={{ flex: 1, backgroundColor: 'white', padding: '24px', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', position: 'sticky', top: '40px' }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#111827', marginBottom: '8px' }}>Attach YouTube Video</h3>
-            <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '24px' }}>Embed a new lesson into this course directly.</p>
+          {/* Sidebars - Add Module & Add Lesson Form */}
+          <div style={{ flex: '0 0 350px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            
+            {/* Create Topic Form */}
+            <div style={{ backgroundColor: '#f9fafb', padding: '24px', borderRadius: '12px', border: '1px dashed #d1d5db' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#111827', marginBottom: '8px' }}>1. Create Topic (Module)</h3>
+              <p style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '16px' }}>Organize your course into structured topics.</p>
+              
+              <form action={addModuleToCourse} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <input type="hidden" name="courseId" value={courseId} />
+                <input name="title" required type="text" placeholder="e.g., Week 1: Basics" style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+                <button type="submit" style={{ padding: '8px', backgroundColor: 'white', color: '#111827', border: '1px solid #d1d5db', borderRadius: '6px', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>
+                  + Add Topic Folder
+                </button>
+              </form>
+            </div>
 
-            <form action={addLessonToCourse} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <input type="hidden" name="courseId" value={courseId} />
+            {/* Attach Lesson Form */}
+            <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', position: 'sticky', top: '40px' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#111827', marginBottom: '8px' }}>2. Attach YouTube Video</h3>
+              <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '24px' }}>Upload a video into a specific topic.</p>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#374151' }}>Lesson Title</label>
-                <input name="title" required type="text" placeholder="e.g., Understanding Transformers" style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px', width: '100%' }} />
-              </div>
+              <form action={addLessonToCourse} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <input type="hidden" name="courseId" value={courseId} />
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#374151' }}>YouTube Video ID</label>
-                <input name="externalVideoId" required type="text" placeholder="e.g., dQw4w9WgXcQ" style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px', width: '100%' }} />
-                <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>Check the video URL <br />`watch?v=[ID_HERE]`</span>
-              </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#374151' }}>Select Topic</label>
+                  <select name="moduleSortOrder" required style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px', width: '100%', backgroundColor: 'white' }}>
+                    <option value="0">General / Uncategorized</option>
+                    {modules.map(mod => (
+                       <option value={mod.sort_order} key={mod.id}>{mod.title}</option>
+                    ))}
+                  </select>
+                </div>
 
-              <button type="submit" style={{ padding: '12px', backgroundColor: '#111827', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', marginTop: '8px' }}>
-                Submit & Publish
-              </button>
-            </form>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#374151' }}>Lesson Title</label>
+                  <input name="title" required type="text" placeholder="e.g., Understanding AI" style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px', width: '100%' }} />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#374151' }}>YouTube Video ID</label>
+                  <input name="externalVideoId" required type="text" placeholder="e.g., dQw4w9WgXcQ" style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px', width: '100%' }} />
+                  <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>Check the video URL `watch?v=[ID_HERE]`</span>
+                </div>
+
+                <button type="submit" style={{ padding: '12px', backgroundColor: '#111827', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', marginTop: '8px' }}>
+                  Submit & Sync Video
+                </button>
+              </form>
+            </div>
+            
           </div>
-
         </div>
       )}
     </AdminShell>

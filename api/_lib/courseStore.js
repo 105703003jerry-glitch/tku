@@ -208,7 +208,7 @@ async function getPublishedCourses(sql, courseId) {
         if (!target.modules[item.locale]) {
             target.modules[item.locale] = [];
         }
-        target.modules[item.locale].push(item.title);
+        target.modules[item.locale].push({ title: item.title, sortOrder: item.sort_order });
     });
 
     lessons.forEach(function(item) {
