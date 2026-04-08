@@ -180,6 +180,30 @@ export async function deleteLesson(formData) {
   }
 }
 
+export async function deleteCourse(formData) {
+  try {
+    await checkAdmin();
+    const sql = db.getSql();
+
+    const courseId = formData.get('courseId');
+
+    if (!courseId) {
+      throw new Error('Course ID required');
+    }
+
+    await sql`DELETE FROM courses WHERE id = ${courseId}`;
+
+    revalidatePath('/admin/courses');
+    revalidatePath('/courses');
+    revalidatePath(`/learn/${courseId}`);
+    revalidatePath(`/admin/courses/${courseId}`);
+    return { success: true };
+  } catch (err) {
+    console.error("Delete Course Error:", err);
+    return { success: false, error: err.message };
+  }
+}
+
 export async function updateCourseDetails(formData) {
   try {
     await checkAdmin();

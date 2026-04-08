@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import db from '@/api/_lib/db';
+import { deleteCourse } from './actions';
 import AdminShell from '../_components/AdminShell';
 
 export const dynamic = 'force-dynamic';
@@ -59,6 +60,12 @@ export default async function AdminCoursesPage() {
                  <Link href={`/admin/courses/${course.id}`} style={{ flex: 1, textAlign: 'center', padding: '8px', backgroundColor: '#f3f4f6', color: '#374151', textDecoration: 'none', borderRadius: '6px', fontSize: '0.9rem', fontWeight: 500 }}>
                    Manage Video Lessons
                  </Link>
+                 <form action={deleteCourse} style={{ flex: 1 }}>
+                   <input type="hidden" name="courseId" value={course.id} />
+                   <button type="submit" style={{ width: '100%', padding: '8px', backgroundColor: '#fff1f2', color: '#be123c', border: '1px solid #fecdd3', borderRadius: '6px', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer' }}>
+                     Delete Course
+                   </button>
+                 </form>
                </div>
             </div>
           ))}
