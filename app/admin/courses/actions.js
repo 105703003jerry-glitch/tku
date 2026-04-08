@@ -13,6 +13,7 @@ import {
   validateCourseCoverUpload,
 } from '@/app/lib/courseCover';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 
 // Verify Admin Role before execution
 async function checkAdmin() {
@@ -372,6 +373,7 @@ export async function updateCourseDetails(formData) {
   try {
     await checkAdmin();
     const sql = db.getSql();
+    await ensureCourseCoverSchema(sql);
     
     const id = formData.get('courseId');
     const title = formData.get('title');
@@ -425,7 +427,7 @@ export async function updateCourseDetails(formData) {
     revalidatePath('/courses');
     revalidatePath('/dashboard');
     revalidatePath(`/learn/${id}`);
-    return { success: true };
+    redirect(`/admin/courses/${id}`);
   } catch (err) {
     console.error("Update Course Error:", err);
     return { success: false, error: err.message };
