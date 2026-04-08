@@ -1,21 +1,11 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 import db from '@/api/_lib/db';
+import { seedSql } from '@/db/course_seed.js';
+import { schemaSql } from '@/db/schema.js';
 
 export async function GET() {
   try {
     const sql = db.getSql();
-    
-    // Read local files
-    const schemaPath = path.join(process.cwd(), 'db', 'schema.sql');
-    const seedPath = path.join(process.cwd(), 'db', 'course_seed.sql');
-    
-    let schemaSql = '';
-    let seedSql = '';
-    
-    if (fs.existsSync(schemaPath)) schemaSql = fs.readFileSync(schemaPath, 'utf8');
-    if (fs.existsSync(seedPath)) seedSql = fs.readFileSync(seedPath, 'utf8');
     
     if (schemaSql) {
        console.log("Running schema sequentially...");

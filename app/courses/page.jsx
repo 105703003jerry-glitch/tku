@@ -4,6 +4,8 @@ import Link from 'next/link';
 import db from '@/api/_lib/db';
 import courseStore from '@/api/_lib/courseStore';
 
+export const dynamic = 'force-dynamic';
+
 export default async function CoursesPage() {
   let dbCourses = [];
   let error = null;
