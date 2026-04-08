@@ -18,8 +18,16 @@ export async function GET() {
     if (fs.existsSync(seedPath)) seedSql = fs.readFileSync(seedPath, 'utf8');
     
     if (schemaSql) {
-       console.log("Running schema...");
-       await sql(schemaSql);
+       console.log("Running schema sequentially...");
+       const statements = schemaSql.split(';').map(s => s.trim()).filter(s => s.length > 0);
+       for (const stmt of statements) {
+           try {
+               await sql(stmt);
+           } catch (stmtErr) {
+               console.error("Statement error:", stmt, stmtErr);
+               throw stmtErr;
+           }
+       }
     }
     
     // Some basic seed overrides
