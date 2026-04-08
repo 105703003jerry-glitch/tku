@@ -1,8 +1,10 @@
 import db from '@/api/_lib/db';
-import { LEVEL_OPTIONS, TRACK_OPTIONS, parseTrackLabels } from '@/app/lib/courseMeta';
+import { getTrackOptionByKey, LEVEL_OPTIONS, TRACK_OPTIONS } from '@/app/lib/courseMeta';
+import { ensureCourseTagSchema, getCourseTagKeys, listCourseTagOptions } from '@/app/lib/courseTags';
 import Link from 'next/link';
 import AdminShell from '../../_components/AdminShell';
 import CourseCoverFields from '../CourseCoverFields';
+import CourseTagSelector from '../CourseTagSelector';
 import SaveCourseButton from '../SaveCourseButton';
 import { addLessonToCourse, deleteLesson, updateCourseDetails, addModuleToCourse, deleteModuleFromCourse } from '../actions';
 import CourseOrganizerClient from './CourseOrganizerClient';
@@ -17,10 +19,13 @@ export default async function AdminCourseDetails({ params, searchParams }) {
   let course = null;
   let lessons = [];
   let modules = [];
+  let courseTagOptions = [];
+  let selectedCourseTagKeys = [];
   let error = null;
 
   try {
     const sql = db.getSql();
+    await ensureCourseTagSchema(sql);
 
     // Get Course details
     const courseRes = await sql`
@@ -34,6 +39,9 @@ export default async function AdminCourseDetails({ params, searchParams }) {
 
     // Get Modules and Lessons
     if (course) {
+      courseTagOptions = await listCourseTagOptions(sql);
+      selectedCourseTagKeys = await getCourseTagKeys(sql, courseId);
+
       modules = await sql`
         SELECT * FROM course_modules
         WHERE course_id = ${courseId} AND locale = 'zh-TW'
@@ -55,7 +63,6 @@ export default async function AdminCourseDetails({ params, searchParams }) {
     return <AdminShell><div style={{ padding: '40px' }}>Course not found: {courseId}</div></AdminShell>;
   }
 
-  const courseTrackLabels = parseTrackLabels(course?.track_label_zh).join(', ');
   const courseDurationHours = Number.parseInt(course?.duration_label, 10);
 
   return (
@@ -85,7 +92,7 @@ export default async function AdminCourseDetails({ params, searchParams }) {
             </div>
             <div style={{ flex: '1 1 220px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Track Category</label>
-               <select name="trackKey" defaultValue={course.track_key} style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px', backgroundColor: 'white' }}>
+               <select name="trackKey" defaultValue={getTrackOptionByKey(course.track_key).key} style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px', backgroundColor: 'white' }}>
                   {TRACK_OPTIONS.map((option) => (
                     <option key={option.key} value={option.key}>{option.labelZh}</option>
                   ))}
@@ -108,7 +115,7 @@ export default async function AdminCourseDetails({ params, searchParams }) {
             </div>
             <div style={{ flex: '1 1 220px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>課程 Hashtags</label>
-               <input name="trackLabels" defaultValue={courseTrackLabels} placeholder="核心華語, 初級, 口說訓練" style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+               <CourseTagSelector initialOptions={courseTagOptions} initialSelectedKeys={selectedCourseTagKeys} />
             </div>
             <div style={{ flex: '1 1 140px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Hours</label>

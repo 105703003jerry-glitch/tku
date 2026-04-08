@@ -1,3 +1,5 @@
+const { ensureCourseTagSchema, getCourseTagMap } = require('../../app/lib/courseTags');
+
 async function ensureCourseCoverSchema(sql) {
     await sql`ALTER TABLE courses ADD COLUMN IF NOT EXISTS cover_image_url TEXT`;
     await sql`ALTER TABLE courses ADD COLUMN IF NOT EXISTS cover_image_source VARCHAR(20) NOT NULL DEFAULT 'youtube'`;
@@ -12,9 +14,11 @@ async function getPublishedCourses(sql, courseId) {
     var outcomes;
     var modules;
     var lessons;
+    var courseTagMap;
     var courseMap = {};
 
     await ensureCourseCoverSchema(sql);
+    await ensureCourseTagSchema(sql);
 
     if (courseId) {
         courses = await sql`
@@ -60,6 +64,8 @@ async function getPublishedCourses(sql, courseId) {
             ORDER BY sort_order ASC, published_at DESC NULLS LAST, created_at ASC
         `;
     }
+
+    courseTagMap = await getCourseTagMap(sql);
 
     if (!courses.length) {
         return [];
@@ -185,6 +191,7 @@ async function getPublishedCourses(sql, courseId) {
             coverImageWidth: course.cover_image_width,
             coverImageHeight: course.cover_image_height,
             instructor: course.instructor_name,
+            courseTags: courseTagMap[course.id] || [],
             title: {},
             summary: {},
             description: {},

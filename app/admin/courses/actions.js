@@ -4,6 +4,7 @@ import { put } from '@vercel/blob';
 import db from '@/api/_lib/db';
 import { getAuthUser } from '@/app/lib/authSession';
 import { buildTrackMetadata, formatDurationLabel, normalizeCourseId } from '@/app/lib/courseMeta';
+import { ensureCourseTagSchema, parseCourseTagKeys, setCourseTagAssignments } from '@/app/lib/courseTags';
 import {
   COURSE_COVER_RECOMMENDED_HEIGHT,
   COURSE_COVER_RECOMMENDED_WIDTH,
@@ -128,17 +129,18 @@ export async function createCourse(formData) {
     await checkAdmin();
     const sql = db.getSql();
     await ensureCourseCoverSchema(sql);
+    await ensureCourseTagSchema(sql);
     
     const rawId = formData.get('id');
     const title = formData.get('title');
     const description = formData.get('description');
     const trackKey = formData.get('trackKey');
-    const trackLabels = formData.get('trackLabels');
+    const courseTagKeys = parseCourseTagKeys(formData.get('courseTagKeys'));
     const levelKey = formData.get('levelKey');
     const durationHours = formData.get('durationHours');
     const id = normalizeCourseId(rawId, title);
     const summary = description;
-    const trackMeta = buildTrackMetadata(trackKey, trackLabels);
+    const trackMeta = buildTrackMetadata(trackKey);
     const durationLabel = formatDurationLabel(durationHours);
     const instructorName = 'TKU Team';
     const formatLabel = 'Video lessons';
@@ -207,6 +209,8 @@ export async function createCourse(formData) {
         ${audienceLabel}
       )
     `;
+
+    await setCourseTagAssignments(sql, id, courseTagKeys);
     
     revalidatePath('/admin/courses');
     revalidatePath('/courses');
@@ -227,6 +231,7 @@ export async function addModuleToCourse(formData) {
     await checkAdmin();
     const sql = db.getSql();
     await ensureCourseCoverSchema(sql);
+    await ensureCourseTagSchema(sql);
     
     const courseId = formData.get('courseId');
     const title = formData.get('title');
@@ -382,10 +387,10 @@ export async function updateCourseDetails(formData) {
     const description = formData.get('description');
     const status = formData.get('status');
     const trackKey = formData.get('trackKey');
-    const trackLabels = formData.get('trackLabels');
+    const courseTagKeys = parseCourseTagKeys(formData.get('courseTagKeys'));
     const levelKey = formData.get('levelKey');
     const durationHours = formData.get('durationHours');
-    const trackMeta = buildTrackMetadata(trackKey, trackLabels);
+    const trackMeta = buildTrackMetadata(trackKey);
     const durationLabel = formatDurationLabel(durationHours);
     
     if (!id || !title) throw new Error("Missing required fields");
@@ -423,6 +428,8 @@ export async function updateCourseDetails(formData) {
       SET title = ${title}, description = ${description}
       WHERE course_id = ${id} AND locale = 'zh-TW'
     `;
+
+    await setCourseTagAssignments(sql, id, courseTagKeys);
     
     revalidatePath(`/admin/courses/${id}`);
     revalidatePath(`/admin/courses`);

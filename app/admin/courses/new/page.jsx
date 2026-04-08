@@ -3,16 +3,16 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { createCourse } from '../actions';
-import { TRACK_OPTIONS, LEVEL_OPTIONS, normalizeCourseId } from '@/app/lib/courseMeta';
+import { TRACK_OPTIONS, LEVEL_OPTIONS, getTrackOptionByKey, normalizeCourseId } from '@/app/lib/courseMeta';
 import Link from 'next/link';
 import CourseCoverFields from '../CourseCoverFields';
+import CourseTagSelector from '../CourseTagSelector';
 
 export default function NewCoursePage() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState(null);
   const [trackKey, setTrackKey] = useState(TRACK_OPTIONS[0].key);
-  const [trackLabels, setTrackLabels] = useState(TRACK_OPTIONS[0].labelZh);
   const [title, setTitle] = useState('');
   const [courseId, setCourseId] = useState('');
   const [levelKey, setLevelKey] = useState(LEVEL_OPTIONS[0]);
@@ -98,14 +98,7 @@ export default function NewCoursePage() {
                 name="trackKey"
                 required
                 value={trackKey}
-                onChange={(event) => {
-                  const nextTrackKey = event.target.value;
-                  const nextOption = TRACK_OPTIONS.find((option) => option.key === nextTrackKey);
-                  setTrackKey(nextTrackKey);
-                  if (nextOption) {
-                    setTrackLabels(nextOption.labelZh);
-                  }
-                }}
+                onChange={(event) => setTrackKey(event.target.value)}
                 style={{ padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', width: '100%', backgroundColor: 'white' }}
               >
                 {TRACK_OPTIONS.map((option) => (
@@ -127,15 +120,7 @@ export default function NewCoursePage() {
           <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
             <div style={{ flex: '1 1 380px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#374151' }}>課程 Hashtags</label>
-              <input
-                name="trackLabels"
-                type="text"
-                value={trackLabels}
-                onChange={(event) => setTrackLabels(event.target.value)}
-                placeholder="例如：核心華語, 口說訓練, 初級"
-                style={{ padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '8px', width: '100%' }}
-              />
-              <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>可輸入多個標籤，使用逗號分隔，前台會顯示成多個藍色小字卡。</span>
+              <CourseTagSelector />
             </div>
 
             <div style={{ flex: '0 0 180px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -154,7 +139,7 @@ export default function NewCoursePage() {
             initialSource="preset"
             title={title}
             level={levelKey}
-            trackLabel={trackLabels}
+            trackLabel={getTrackOptionByKey(trackKey).labelZh}
           />
 
           <button disabled={isPending} type="submit" style={{ padding: '14px', backgroundColor: 'var(--brand-primary)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer', marginTop: '16px', opacity: isPending ? 0.7 : 1 }}>

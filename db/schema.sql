@@ -211,6 +211,21 @@ CREATE TABLE IF NOT EXISTS course_modules (
     UNIQUE (course_id, locale, sort_order)
 );
 
+CREATE TABLE IF NOT EXISTS course_tag_options (
+    id BIGSERIAL PRIMARY KEY,
+    key VARCHAR(120) NOT NULL UNIQUE,
+    label_zh VARCHAR(120) NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS course_tag_assignments (
+    id BIGSERIAL PRIMARY KEY,
+    course_id VARCHAR(80) NOT NULL REFERENCES courses (id) ON DELETE CASCADE,
+    tag_key VARCHAR(120) NOT NULL REFERENCES course_tag_options (key) ON DELETE CASCADE,
+    sort_order INT NOT NULL DEFAULT 0,
+    UNIQUE (course_id, tag_key)
+);
+
 CREATE TABLE IF NOT EXISTS lessons (
     id BIGSERIAL PRIMARY KEY,
     course_id VARCHAR(80) NOT NULL REFERENCES courses (id) ON DELETE CASCADE,

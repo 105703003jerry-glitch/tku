@@ -1,10 +1,6 @@
 export const TRACK_OPTIONS = [
-  { key: 'mandarin-core', labelZh: '核心華語', labelEn: 'Core Mandarin' },
-  { key: 'tocfl-pathway', labelZh: 'TOCFL 路徑', labelEn: 'TOCFL Pathway' },
-  { key: 'professional-track', labelZh: '專業華語', labelEn: 'Professional Mandarin' },
-  { key: 'conversation-lab', labelZh: '口說實戰', labelEn: 'Conversation Lab' },
-  { key: 'business-mandarin', labelZh: '商務華語', labelEn: 'Business Mandarin' },
-  { key: 'culture-literacy', labelZh: '文化素養', labelEn: 'Culture Literacy' },
+  { key: 'mandarin-learning', labelZh: '中文學習', labelEn: 'Mandarin Learning' },
+  { key: 'teacher-training', labelZh: '師培課程', labelEn: 'Teacher Training' },
 ];
 
 export const LEVEL_OPTIONS = [
@@ -14,7 +10,17 @@ export const LEVEL_OPTIONS = [
 ];
 
 export function getTrackOptionByKey(trackKey) {
-  return TRACK_OPTIONS.find((option) => option.key === trackKey) || TRACK_OPTIONS[0];
+  const normalizedKey = String(trackKey || '').trim();
+
+  if (['professional-track', 'business-mandarin'].includes(normalizedKey)) {
+    return TRACK_OPTIONS.find((option) => option.key === 'teacher-training') || TRACK_OPTIONS[0];
+  }
+
+  if (['mandarin-core', 'tocfl-pathway', 'conversation-lab', 'culture-literacy'].includes(normalizedKey)) {
+    return TRACK_OPTIONS.find((option) => option.key === 'mandarin-learning') || TRACK_OPTIONS[0];
+  }
+
+  return TRACK_OPTIONS.find((option) => option.key === normalizedKey) || TRACK_OPTIONS[0];
 }
 
 export function parseTrackLabels(labelText) {
@@ -28,16 +34,13 @@ export function parseTrackLabels(labelText) {
     .filter(Boolean);
 }
 
-export function buildTrackMetadata(trackKey, rawTrackLabels) {
+export function buildTrackMetadata(trackKey) {
   const trackOption = getTrackOptionByKey(trackKey);
-  const parsedLabels = parseTrackLabels(rawTrackLabels);
-  const labels = parsedLabels.length > 0 ? parsedLabels : [trackOption.labelZh];
 
   return {
     trackKey: trackOption.key,
-    trackLabelZh: labels.join(', '),
+    trackLabelZh: trackOption.labelZh,
     trackLabelEn: trackOption.labelEn,
-    trackLabels: labels,
   };
 }
 

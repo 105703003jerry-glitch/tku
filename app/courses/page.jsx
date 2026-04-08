@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 // Use the existing DB logic
 import db from '@/api/_lib/db';
-import { getTrackOptionByKey, parseTrackLabels } from '@/app/lib/courseMeta';
+import { getTrackOptionByKey } from '@/app/lib/courseMeta';
 import { getCourseCoverImage } from '@/app/lib/courseCover';
 import courseStore from '@/api/_lib/courseStore';
 
@@ -53,7 +53,7 @@ export default async function CoursesPage() {
           <Link href={`/learn/${course.id}`} key={course.id} className="card" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
             {(() => {
               const trackCategoryLabel = getTrackOptionByKey(course.track).labelZh;
-              const combinedTags = Array.from(new Set([trackCategoryLabel, ...parseTrackLabels(course.trackLabel?.['zh-TW'] || course.track)]));
+              const combinedTags = Array.from(new Set([trackCategoryLabel, ...(course.courseTags || []).map((tag) => tag.label)]));
 
               return (
                 <>
