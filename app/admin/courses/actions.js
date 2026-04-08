@@ -22,20 +22,69 @@ export async function createCourse(formData) {
     const description = formData.get('description');
     const trackKey = formData.get('trackKey');
     const levelKey = formData.get('levelKey');
+    const summary = description;
+    const trackLabelZh = trackKey === 'ai-fundamentals'
+      ? 'AI Fundamentals'
+      : trackKey === 'data-engineering'
+        ? 'Data Engineering'
+        : 'Career Path';
+    const trackLabelEn = trackLabelZh;
+    const durationLabel = 'Self-paced';
+    const instructorName = 'TKU Team';
+    const formatLabel = 'Video lessons';
+    const audienceLabel = 'All learners';
     
     // 1. Insert into courses
     await sql`
-      INSERT INTO courses (id, track_key, level_key, provider_id, status)
-      VALUES (${id}, ${trackKey}, ${levelKey}, 'system', 'published')
+      INSERT INTO courses (
+        id,
+        track_key,
+        track_label_zh,
+        track_label_en,
+        level_key,
+        duration_label,
+        instructor_name,
+        status,
+        published_at
+      )
+      VALUES (
+        ${id},
+        ${trackKey},
+        ${trackLabelZh},
+        ${trackLabelEn},
+        ${levelKey},
+        ${durationLabel},
+        ${instructorName},
+        'published',
+        NOW()
+      )
     `;
     
     // 2. Insert default localization
     await sql`
-      INSERT INTO course_localizations (course_id, locale, title, description)
-      VALUES (${id}, 'zh-TW', ${title}, ${description})
+      INSERT INTO course_localizations (
+        course_id,
+        locale,
+        title,
+        summary,
+        description,
+        format_label,
+        audience_label
+      )
+      VALUES (
+        ${id},
+        'zh-TW',
+        ${title},
+        ${summary},
+        ${description},
+        ${formatLabel},
+        ${audienceLabel}
+      )
     `;
     
     revalidatePath('/admin/courses');
+    revalidatePath('/courses');
+    revalidatePath(`/learn/${id}`);
     return { success: true, courseId: id };
   } catch (err) {
     console.error("Create Course Error:", err);
@@ -153,6 +202,8 @@ export async function updateCourseDetails(formData) {
     
     revalidatePath(`/admin/courses/${id}`);
     revalidatePath(`/admin/courses`);
+    revalidatePath('/courses');
+    revalidatePath(`/learn/${id}`);
     return { success: true };
   } catch (err) {
     console.error("Update Course Error:", err);

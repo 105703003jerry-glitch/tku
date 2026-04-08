@@ -18,12 +18,12 @@ export default async function CoursesPage() {
     error = true;
   }
 
-  // Fallback to placeholders only if DB fetch fails
-  const courses = (!error && dbCourses.length > 0) ? dbCourses : [
+  // Show samples only when DB access itself fails.
+  const courses = error ? [
     { id: 'master-ai-101', title: {'zh-TW': 'Mastering AI 101'}, level: 'Beginner', duration: '4 Hours', trackLabel: {'zh-TW': 'Core Concept'} },
     { id: 'gpt-advanced', title: {'zh-TW': 'Advanced Prompt Engineering'}, level: 'Intermediate', duration: '6 Hours', trackLabel: {'zh-TW': 'Skills'} },
     { id: 'ai-agents-pro', title: {'zh-TW': 'Building Autonomous Agents'}, level: 'Advanced', duration: '12 Hours', trackLabel: {'zh-TW': 'Pro Path'} },
-  ];
+  ] : dbCourses;
 
   return (
     <main className="layout-container" style={{ padding: '40px 24px' }}>
@@ -41,6 +41,11 @@ export default async function CoursesPage() {
         </div>
       )}
 
+      {courses.length === 0 ? (
+        <div style={{ padding: '24px', backgroundColor: '#ffffff', border: '1px dashed var(--border-light)', borderRadius: '12px', color: 'var(--text-secondary)' }}>
+          No published courses were found in the database.
+        </div>
+      ) : (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
         {courses.map(course => (
           <Link href={`/learn/${course.id}`} key={course.id} className="card" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
@@ -69,6 +74,7 @@ export default async function CoursesPage() {
           </Link>
         ))}
       </div>
+      )}
     </main>
   );
 }

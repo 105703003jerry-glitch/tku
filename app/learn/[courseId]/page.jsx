@@ -10,36 +10,41 @@ export default async function LearnCoursePage({ params, searchParams }) {
   let course = null;
   let error = null;
   let user = await getAuthUser();
+  let sql;
 
   try {
-    const sql = db.getSql();
+    sql = db.getSql();
     const courses = await courseStore.getPublishedCourses(sql, courseId);
     if (courses && courses.length > 0) {
       course = courses[0];
     }
-
-    // Auto-enroll the logged in user as Paywall is bypassed
-    if (user && course) {
-      await sql`
-        INSERT INTO enrollments (user_id, course_id, access_level, progress_percent)
-        VALUES (${user.id}, ${courseId}, 'full_access', 10)
-        ON CONFLICT (user_id, course_id) DO UPDATE 
-        SET last_activity_at = NOW()
-      `;
-    }
   } catch (err) {
+    console.error("Learn page course fetch error:", err);
     error = "Database connection not configured or failed. Showing placeholder.";
   }
 
-  // Placeholder data if DB fetch fails or course not found
-  const lessons = course?.lessons?.length > 0 ? course.lessons : [
+  if (user && course && sql) {
+    try {
+      await sql`
+        INSERT INTO enrollments (user_id, course_id, progress_percent)
+        VALUES (${user.id}, ${courseId}, 10)
+        ON CONFLICT (user_id, course_id) DO UPDATE 
+        SET last_activity_at = NOW()
+      `;
+    } catch (err) {
+      console.error("Learn page enrollment sync error:", err);
+    }
+  }
+
+  // Keep placeholders only for DB failures so empty DB states remain visible.
+  const lessons = error ? [
     { title: "Introduction to AI", externalVideoId: "jZ952vChhuI" }, 
     { title: "Neural Networks Basics", externalVideoId: "aircAruvnKk" }
-  ];
+  ] : (course?.lessons || []);
   
   // Support interactive menu selection via query parameters
   const activeLessonIndex = searchParams?.lesson ? parseInt(searchParams.lesson, 10) : 0;
-  const activeLesson = lessons[activeLessonIndex] || lessons[0];
+  const activeLesson = lessons[activeLessonIndex] || lessons[0] || null;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--bg-light)' }}>
@@ -178,7 +183,7 @@ export default async function LearnCoursePage({ params, searchParams }) {
               <div style={{ display: 'flex', gap: '12px' }}>
                  <div style={{ width: '28px', height: '28px', backgroundColor: 'var(--brand-primary)', borderRadius: '4px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.7rem' }}>AI</div>
                  <div style={{ backgroundColor: '#f2f2f7', padding: '12px 16px', borderRadius: '0px 12px 12px 12px', fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>
-                   Hello {user?.nickname?.split(' ')[0] || 'there'}! I'm your dedicated AI tutor for <strong>"{activeLesson?.title}"</strong>.<br/><br/>If you don't understand any concept in the video, just ask me!
+                   Hello {user?.nickname?.split(' ')[0] || 'there'}! I'm your dedicated AI tutor for <strong>"{activeLesson?.title || 'this course'}"</strong>.<br/><br/>If you don't understand any concept in the video, just ask me!
                  </div>
               </div>
            </div>
