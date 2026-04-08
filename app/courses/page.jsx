@@ -28,7 +28,7 @@ export default async function CoursesPage() {
       <header style={{ marginBottom: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
           <h1 style={{ fontSize: '2.5rem', fontWeight: 700, marginBottom: '8px' }}>Explore Courses</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Find your next learning adventure.</p>
+          <p style={{ color: 'var(--text-secondary)' }}>Find your next learning adventure. All courses are free to explore!</p>
         </div>
         <Link href="/dashboard" className="btn-secondary">Go to Dashboard</Link>
       </header>
@@ -41,7 +41,7 @@ export default async function CoursesPage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
         {courses.map(course => (
-          <Link href={`/checkout/${course.id}`} key={course.id} className="card" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
+          <Link href={`/learn/${course.id}`} key={course.id} className="card" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
             <div style={{ 
                 height: '180px', 
                 backgroundColor: '#f2f2f7', 
@@ -57,11 +57,11 @@ export default async function CoursesPage() {
               </div>
               <h3 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '8px' }}>{course.title?.['zh-TW'] || 'Untitled'}</h3>
               <div style={{ display: 'flex', gap: '16px', color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '24px' }}>
-                <span>• Level: {course.level}</span>
-                <span>• {course.duration}</span>
+                <span>• Level: {course.level || 'Everyone'}</span>
+                <span>• {course.duration || 'Self-paced'}</span>
               </div>
               <div className="btn-primary" style={{ width: '100%', textAlign: 'center' }}>
-                Enroll Now
+                Start Learning
               </div>
             </div>
           </Link>

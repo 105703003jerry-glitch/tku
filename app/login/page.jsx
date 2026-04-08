@@ -1,7 +1,24 @@
-import Link from 'next/link';
-import Image from 'next/image';
+'use client';
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { performDemoLogin } from './actions';
 
 export default function Login() {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [errorMsg, setErrorMsg] = useState(null);
+
+  const handleLogin = () => {
+    startTransition(async () => {
+      setErrorMsg(null);
+      const res = await performDemoLogin();
+      if (res.success) {
+        router.push('/dashboard');
+      } else {
+        setErrorMsg('Login failed: ' + res.error);
+      }
+    });
+  };
   return (
     <main style={{ minHeight: '100vh', display: 'flex', backgroundColor: 'var(--bg-light)' }}>
       {/* Left side: branding/aesthetic */}
@@ -18,10 +35,16 @@ export default function Login() {
           <h2 style={{ fontSize: '1.8rem', fontWeight: 600, marginBottom: '8px' }}>Sign in</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>Welcome back! Please enter your details.</p>
           
+          {errorMsg && (
+            <div style={{ padding: '12px', backgroundColor: '#fff3cd', color: '#856404', borderRadius: '4px', marginBottom: '16px', fontSize: '0.9rem' }}>
+              {errorMsg}
+            </div>
+          )}
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <Link href="/dashboard" className="btn-primary" style={{ width: '100%', padding: '14px', fontSize: '1rem', display: 'flex', justifyContent: 'center', gap: '8px' }}>
-               Continue with Google
-            </Link>
+            <button onClick={handleLogin} disabled={isPending} className="btn-primary" style={{ width: '100%', padding: '14px', fontSize: '1rem', opacity: isPending ? 0.7 : 1 }}>
+               {isPending ? 'Authenticating...' : 'Continue with Google (Demo Auto-Login)'}
+            </button>
           </div>
           
           <div style={{ marginTop: '24px', textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-tertiary)' }}>
