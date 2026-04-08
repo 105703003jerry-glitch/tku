@@ -2,9 +2,8 @@ import Link from 'next/link';
 
 // Use the existing DB logic
 import db from '@/api/_lib/db';
-import { getTrackOptionByKey } from '@/app/lib/courseMeta';
-import { getCourseCoverImage } from '@/app/lib/courseCover';
 import courseStore from '@/api/_lib/courseStore';
+import CoursesCatalogClient from './CoursesCatalogClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,47 +47,7 @@ export default async function CoursesPage() {
           No published courses were found in the database.
         </div>
       ) : (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
-        {courses.map(course => (
-          <Link href={`/learn/${course.id}`} key={course.id} className="card" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
-            {(() => {
-              const trackCategoryLabel = getTrackOptionByKey(course.track).labelZh;
-              const combinedTags = Array.from(new Set([trackCategoryLabel, ...(course.courseTags || []).map((tag) => tag.label)]));
-
-              return (
-                <>
-            <div style={{ 
-                height: '180px', 
-                backgroundColor: '#f2f2f7', 
-                backgroundImage: `url("${getCourseCoverImage(course)}")`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                borderBottom: '1px solid var(--border-light)' 
-              }} 
-            />
-            <div style={{ padding: '24px' }}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
-                {combinedTags.map((label) => (
-                  <div key={`${course.id}-${label}`} style={{ display: 'inline-block', backgroundColor: 'var(--brand-secondary)', color: 'var(--brand-primary)', fontSize: '0.75rem', fontWeight: 600, padding: '4px 8px', borderRadius: '4px' }}>
-                    {label}
-                  </div>
-                ))}
-              </div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '8px' }}>{course.title?.['zh-TW'] || 'Untitled'}</h3>
-              <div style={{ display: 'flex', gap: '16px', color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '24px' }}>
-                <span>• Level: {course.level || 'Everyone'}</span>
-                <span>• {course.duration || 'Self-paced'}</span>
-              </div>
-              <div className="btn-primary" style={{ width: '100%', textAlign: 'center' }}>
-                Start Learning
-              </div>
-            </div>
-                </>
-              );
-            })()}
-          </Link>
-        ))}
-      </div>
+        <CoursesCatalogClient courses={courses} />
       )}
     </main>
   );
