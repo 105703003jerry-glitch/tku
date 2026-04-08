@@ -143,21 +143,19 @@ export async function deleteModuleFromCourse(formData) {
       throw new Error('Topic ID required');
     }
 
-    await sql.begin(async (tx) => {
-      await tx`
-        UPDATE lessons
-        SET module_sort_order = 0
-        WHERE course_id = ${courseId}
-          AND module_sort_order = ${moduleSortOrder}
-      `;
+    await sql`
+      UPDATE lessons
+      SET module_sort_order = 0
+      WHERE course_id = ${courseId}
+        AND module_sort_order = ${moduleSortOrder}
+    `;
 
-      await tx`
-        DELETE FROM course_modules
-        WHERE course_id = ${courseId}
-          AND locale = 'zh-TW'
-          AND sort_order = ${moduleSortOrder}
-      `;
-    });
+    await sql`
+      DELETE FROM course_modules
+      WHERE course_id = ${courseId}
+        AND locale = 'zh-TW'
+        AND sort_order = ${moduleSortOrder}
+    `;
 
     revalidatePath(`/admin/courses/${courseId}`);
     return { success: true };
