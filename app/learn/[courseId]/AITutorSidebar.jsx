@@ -3,10 +3,44 @@
 import { useChat } from '@ai-sdk/react';
 import { useEffect, useRef } from 'react';
 
+function getMessageText(message) {
+  if (!message) {
+    return '';
+  }
+
+  if (typeof message.content === 'string' && message.content.trim()) {
+    return message.content;
+  }
+
+  if (Array.isArray(message.parts)) {
+    return message.parts
+      .filter((part) => part && part.type === 'text')
+      .map((part) => String(part.text || ''))
+      .join('');
+  }
+
+  if (Array.isArray(message.content)) {
+    return message.content
+      .map((part) => {
+        if (!part) {
+          return '';
+        }
+
+        if (typeof part === 'string') {
+          return part;
+        }
+
+        return String(part.text || '');
+      })
+      .join('\n');
+  }
+
+  return '';
+}
+
 export default function AITutorSidebar({ activeLesson, viewer, courseId }) {
   const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
     api: '/api/chat',
-    streamProtocol: 'text',
     body: {
       lessonId: activeLesson?.id,
       courseId,
@@ -50,24 +84,28 @@ export default function AITutorSidebar({ activeLesson, viewer, courseId }) {
           </div>
         </div>
 
-        {messages.map((m) => (
-          <div key={m.id} style={{ display: 'flex', gap: '12px', flexDirection: m.role === 'user' ? 'row-reverse' : 'row' }}>
-            {m.role !== 'user' && (
-              <div style={{ width: '28px', height: '28px', backgroundColor: 'var(--brand-primary)', borderRadius: '4px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.7rem' }}>AI</div>
-            )}
-            <div style={{ 
-              backgroundColor: m.role === 'user' ? 'var(--brand-primary)' : '#f2f2f7', 
-              color: m.role === 'user' ? 'white' : 'var(--text-primary)',
-              padding: '12px 16px', 
-              borderRadius: m.role === 'user' ? '12px 12px 0px 12px' : '0px 12px 12px 12px', 
-              fontSize: '0.9rem', 
-              lineHeight: 1.5,
-              whiteSpace: 'pre-wrap'
-            }}>
-              {m.content}
+        {messages.map((m) => {
+          const messageText = getMessageText(m);
+
+          return (
+            <div key={m.id} style={{ display: 'flex', gap: '12px', flexDirection: m.role === 'user' ? 'row-reverse' : 'row' }}>
+              {m.role !== 'user' && (
+                <div style={{ width: '28px', height: '28px', backgroundColor: 'var(--brand-primary)', borderRadius: '4px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.7rem' }}>AI</div>
+              )}
+              <div style={{ 
+                backgroundColor: m.role === 'user' ? 'var(--brand-primary)' : '#f2f2f7', 
+                color: m.role === 'user' ? 'white' : 'var(--text-primary)',
+                padding: '12px 16px', 
+                borderRadius: m.role === 'user' ? '12px 12px 0px 12px' : '0px 12px 12px 12px', 
+                fontSize: '0.9rem', 
+                lineHeight: 1.5,
+                whiteSpace: 'pre-wrap'
+              }}>
+                {messageText}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         {isLoading && (
           <div style={{ fontSize: '0.8rem', color: '#6b7280', margin: '0 auto' }}>AI is typing...</div>
         )}
