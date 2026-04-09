@@ -320,4 +320,22 @@ CREATE TABLE IF NOT EXISTS payment_transactions (
 );
 
 CREATE INDEX IF NOT EXISTS payment_transactions_user_id_idx ON payment_transactions (user_id);
+
+-- Safely add newly introduced columns
+ALTER TABLE courses
+    ADD COLUMN IF NOT EXISTS track_label_zh VARCHAR(80) DEFAULT '',
+    ADD COLUMN IF NOT EXISTS track_label_en VARCHAR(80) DEFAULT '',
+    ADD COLUMN IF NOT EXISTS duration_label VARCHAR(80) DEFAULT '',
+    ADD COLUMN IF NOT EXISTS instructor_name VARCHAR(160) DEFAULT '';
+
+ALTER TABLE course_localizations
+    ADD COLUMN IF NOT EXISTS summary TEXT DEFAULT '',
+    ADD COLUMN IF NOT EXISTS format_label VARCHAR(160) DEFAULT '',
+    ADD COLUMN IF NOT EXISTS audience_label VARCHAR(200) DEFAULT '';
+    
+ALTER TABLE lessons
+    ADD COLUMN IF NOT EXISTS subtitle_text TEXT;
+
+ALTER TABLE ai_conversations
+    ADD COLUMN IF NOT EXISTS lesson_id BIGINT REFERENCES lessons (id) ON DELETE CASCADE;
 `;

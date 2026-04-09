@@ -119,7 +119,8 @@ async function getPublishedCourses(sql, courseId) {
                 content_url,
                 external_video_id,
                 thumbnail_url,
-                duration_seconds
+                duration_seconds,
+                subtitle_text
             FROM lessons
             WHERE course_id = ${courseId}
             ORDER BY course_id, module_sort_order ASC, lesson_sort_order ASC
@@ -169,7 +170,8 @@ async function getPublishedCourses(sql, courseId) {
                 content_url,
                 external_video_id,
                 thumbnail_url,
-                duration_seconds
+                duration_seconds,
+                subtitle_text
             FROM lessons
             ORDER BY course_id, module_sort_order ASC, lesson_sort_order ASC
         `;
@@ -259,7 +261,8 @@ async function getPublishedCourses(sql, courseId) {
             contentUrl: item.content_url,
             externalVideoId: item.external_video_id,
             thumbnailUrl: item.thumbnail_url,
-            durationSeconds: item.duration_seconds
+            durationSeconds: item.duration_seconds,
+            subtitle_text: item.subtitle_text
         });
     });
 

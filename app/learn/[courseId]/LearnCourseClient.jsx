@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import AITutorSidebar from './AITutorSidebar';
 
 function clampPercent(value) {
   const number = Number(value);
@@ -529,31 +530,12 @@ export default function LearnCourseClient({
           </div>
         </main>
 
-        <aside style={{ width: '350px', backgroundColor: '#ffffff', borderLeft: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ padding: '20px', borderBottom: '1px solid var(--border-light)', backgroundColor: '#fafafa', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '36px', height: '36px', backgroundColor: 'var(--brand-primary)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
-              AI
-            </div>
-            <div>
-              <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Tutor Assistant</h3>
-              <span style={{ fontSize: '0.75rem', color: '#34c759', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <div style={{ width: '6px', height: '6px', backgroundColor: '#34c759', borderRadius: '50%' }} /> Online
-              </span>
-            </div>
-          </div>
-
-          <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ width: '28px', height: '28px', backgroundColor: 'var(--brand-primary)', borderRadius: '4px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.7rem' }}>AI</div>
-              <div style={{ backgroundColor: '#f2f2f7', padding: '12px 16px', borderRadius: '0px 12px 12px 12px', fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>
-                Hello {typeof viewer?.nickname === 'string' && viewer.nickname ? viewer.nickname.split(' ')[0] : (typeof viewer?.name === 'string' && viewer.name ? viewer.name.split(' ')[0] : 'there')}! I&apos;m your tutor for <strong>&quot;{activeLesson?.title || 'this course'}&quot;</strong>.
-                <br />
-                <br />
-                Once you reach 80% playback, you can mark the lesson as completed.
-              </div>
-            </div>
-          </div>
-        </aside>
+        <AITutorSidebar 
+          key={activeLesson?.id || 'empty'} 
+          activeLesson={activeLesson} 
+          viewer={viewer} 
+          courseId={courseId} 
+        />
       </div>
     </div>
   );

@@ -444,3 +444,28 @@ export async function updateCourseDetails(formData) {
 
   redirect(redirectPath);
 }
+
+export async function updateLessonSubtitle(formData) {
+  try {
+    await checkAdmin();
+    const sql = db.getSql();
+    
+    const lessonId = formData.get('lessonId');
+    const courseId = formData.get('courseId');
+    const subtitleText = formData.get('subtitleText') || '';
+    
+    if (!lessonId) throw new Error("Lesson ID required");
+    
+    await sql`
+      UPDATE lessons 
+      SET subtitle_text = ${subtitleText}
+      WHERE id = ${lessonId} AND course_id = ${courseId}
+    `;
+    
+    revalidatePath(`/admin/courses/${courseId}`);
+    return { success: true };
+  } catch (err) {
+    console.error("Update Subtitle Error:", err);
+    return { success: false, error: err.message };
+  }
+}

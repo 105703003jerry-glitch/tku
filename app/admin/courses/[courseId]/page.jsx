@@ -6,7 +6,7 @@ import AdminShell from '../../_components/AdminShell';
 import CourseCoverFields from '../CourseCoverFields';
 import CourseTagSelector from '../CourseTagSelector';
 import SaveCourseButton from '../SaveCourseButton';
-import { addLessonToCourse, deleteLesson, updateCourseDetails, addModuleToCourse, deleteModuleFromCourse } from '../actions';
+import { addLessonToCourse, deleteLesson, updateCourseDetails, addModuleToCourse, deleteModuleFromCourse, updateLessonSubtitle } from '../actions';
 import CourseOrganizerClient from './CourseOrganizerClient';
 
 export const dynamic = 'force-dynamic';
@@ -162,9 +162,11 @@ export default async function AdminCourseDetails({ params, searchParams }) {
                 externalVideoId: lesson.external_video_id,
                 moduleSortOrder: Number(lesson.module_sort_order || 0),
                 lessonSortOrder: Number(lesson.lesson_sort_order || 0),
+                subtitleText: lesson.subtitle_text || '',
               }))}
               deleteLessonAction={deleteLesson}
               deleteModuleAction={deleteModuleFromCourse}
+              updateSubtitleAction={updateLessonSubtitle}
             />
           </div>
 

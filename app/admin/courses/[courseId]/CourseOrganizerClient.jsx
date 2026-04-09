@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 
 function buildOrganizerState(modules, lessons) {
   const grouped = {
@@ -52,11 +52,16 @@ export default function CourseOrganizerClient({
   lessons,
   deleteLessonAction,
   deleteModuleAction,
+  updateSubtitleAction,
 }) {
   const [orderedModules, setOrderedModules] = useState(() => buildOrganizerState(modules, lessons));
   const [dragState, setDragState] = useState(null);
   const [notice, setNotice] = useState(null);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setOrderedModules(buildOrganizerState(modules, lessons));
+  }, [modules, lessons]);
 
   const moduleOrderSignature = useMemo(
     () => orderedModules.filter((module) => module.sortOrder !== 0).map((module) => module.sortOrder).join(','),
@@ -288,50 +293,77 @@ export default function CourseOrganizerClient({
               ) : module.lessons.map((lesson, index) => (
                 <div
                   key={lesson.id}
-                  draggable={!isPending}
-                  onDragStart={() => setDragState({ type: 'lesson', lessonId: lesson.id, moduleSortOrder: module.sortOrder })}
-                  onDragEnd={() => setDragState(null)}
-                  onDragOver={(event) => {
-                    if (dragState?.type === 'lesson') {
-                      event.preventDefault();
-                    }
-                  }}
-                  onDrop={(event) => {
-                    if (dragState?.type === 'lesson') {
-                      event.preventDefault();
-                      handleLessonDrop(module.sortOrder, lesson.id);
-                    }
-                  }}
                   style={{
                     display: 'flex',
-                    alignItems: 'center',
+                    flexDirection: 'column',
                     backgroundColor: '#ffffff',
-                    padding: '12px 16px',
                     borderRadius: '8px',
                     border: dragState?.type === 'lesson' && dragState.lessonId === lesson.id ? '1px solid #111827' : '1px solid #f3f4f6',
-                    gap: '16px',
-                    cursor: 'grab',
+                    overflow: 'hidden'
                   }}
                 >
-                  <div style={{ width: '30px', height: '30px', backgroundColor: '#f3f4f6', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, color: '#374151', fontSize: '0.8rem' }}>
-                    {index + 1}
+                  <div
+                    draggable={!isPending}
+                    onDragStart={() => setDragState({ type: 'lesson', lessonId: lesson.id, moduleSortOrder: module.sortOrder })}
+                    onDragEnd={() => setDragState(null)}
+                    onDragOver={(event) => {
+                      if (dragState?.type === 'lesson') {
+                        event.preventDefault();
+                      }
+                    }}
+                    onDrop={(event) => {
+                      if (dragState?.type === 'lesson') {
+                        event.preventDefault();
+                        handleLessonDrop(module.sortOrder, lesson.id);
+                      }
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '12px 16px',
+                      gap: '16px',
+                      cursor: 'grab',
+                    }}
+                  >
+                    <div style={{ width: '30px', height: '30px', backgroundColor: '#f3f4f6', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, color: '#374151', fontSize: '0.8rem' }}>
+                      {index + 1}
+                    </div>
+                    <div style={{ fontSize: '1rem', color: '#6b7280' }}>⋮⋮</div>
+                    <div style={{ flex: 1 }}>
+                      <h4 style={{ fontWeight: 500, color: '#111827', margin: 0, fontSize: '0.95rem' }}>{lesson.title}</h4>
+                      <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '4px 0 0 0' }}>
+                        YouTube ID: <span style={{ fontFamily: 'monospace' }}>{lesson.externalVideoId}</span>
+                      </p>
+                    </div>
+                    <div style={{ color: '#ef4444' }}>
+                      <form action={deleteLessonAction}>
+                        <input type="hidden" name="lessonId" value={lesson.id} />
+                        <input type="hidden" name="courseId" value={courseId} />
+                        <button type="submit" style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem', textDecoration: 'underline', padding: 0 }}>
+                          Delete
+                        </button>
+                      </form>
+                    </div>
                   </div>
-                  <div style={{ fontSize: '1rem', color: '#6b7280' }}>⋮⋮</div>
-                  <div style={{ flex: 1 }}>
-                    <h4 style={{ fontWeight: 500, color: '#111827', margin: 0, fontSize: '0.95rem' }}>{lesson.title}</h4>
-                    <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '4px 0 0 0' }}>
-                      YouTube ID: <span style={{ fontFamily: 'monospace' }}>{lesson.externalVideoId}</span>
-                    </p>
-                  </div>
-                  <div style={{ color: '#ef4444' }}>
-                    <form action={deleteLessonAction}>
+                  <details style={{ borderTop: '1px solid #f3f4f6', padding: '12px 16px', backgroundColor: '#fafafa', fontSize: '0.85rem' }}>
+                    <summary style={{ cursor: 'pointer', fontWeight: 500, color: '#374151', marginBottom: '8px', listStylePosition: 'inside' }}>Edit Subtitles (For AI Tutor)</summary>
+                    <form action={updateSubtitleAction} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
                       <input type="hidden" name="lessonId" value={lesson.id} />
                       <input type="hidden" name="courseId" value={courseId} />
-                      <button type="submit" style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem', textDecoration: 'underline', padding: 0 }}>
-                        Delete
-                      </button>
+                      <textarea 
+                        name="subtitleText" 
+                        defaultValue={lesson.subtitleText || ''} 
+                        placeholder="Paste .srt or raw text here..." 
+                        rows={4} 
+                        style={{ padding: '8px', width: '100%', borderRadius: '6px', border: '1px solid #d1d5db', resize: 'vertical' }} 
+                      />
+                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <button type="submit" style={{ backgroundColor: '#111827', color: 'white', padding: '6px 12px', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}>
+                          Save Subtitles
+                        </button>
+                      </div>
                     </form>
-                  </div>
+                  </details>
                 </div>
               ))}
             </div>
