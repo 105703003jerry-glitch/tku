@@ -1,7 +1,7 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 function getMessageText(message) {
   if (!message) {
@@ -38,13 +38,34 @@ function getMessageText(message) {
   return '';
 }
 
+function getDisplayError(error) {
+  const rawMessage = typeof error?.message === 'string' ? error.message : 'Something went wrong.';
+
+  try {
+    const parsed = JSON.parse(rawMessage);
+    return parsed?.message || parsed?.error || rawMessage;
+  } catch {
+    return rawMessage;
+  }
+}
+
 export default function AITutorSidebar({ activeLesson, viewer, courseId }) {
+  const [requestState, setRequestState] = useState('');
+
   const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
     api: '/api/chat',
     streamProtocol: 'text',
+    credentials: 'same-origin',
     body: {
       lessonId: activeLesson?.id,
       courseId,
+    },
+    onResponse: (response) => {
+      const stage = response.headers.get('x-ai-stage');
+      setRequestState(stage ? `AI route: ${stage}` : `AI route status: ${response.status}`);
+    },
+    onError: (chatError) => {
+      console.error('AI chat client error:', chatError);
     },
   });
 
@@ -114,7 +135,13 @@ export default function AITutorSidebar({ activeLesson, viewer, courseId }) {
       
       {error && (
         <div style={{ padding: '8px 20px', backgroundColor: '#fef2f2', color: '#991b1b', fontSize: '0.85rem' }}>
-          {error.message || 'Something went wrong.'}
+          {getDisplayError(error)}
+        </div>
+      )}
+
+      {requestState && !error && (
+        <div style={{ padding: '8px 20px', backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.8rem', borderTop: '1px solid var(--border-light)' }}>
+          {requestState}
         </div>
       )}
 

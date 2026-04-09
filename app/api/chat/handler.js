@@ -75,18 +75,38 @@ function formatStreamError(error) {
   return rawMessage;
 }
 
+function jsonError(message, status, stage) {
+  return new Response(JSON.stringify({ error: stage, message }), {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-AI-Stage': stage,
+    },
+  });
+}
+
 export async function POST(req) {
+  const requestId = Math.random().toString(36).slice(2, 10);
+
   try {
     const user = await getAuthUser();
     if (!user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+      console.info(`[ai/chat ${requestId}] blocked: unauthorized`);
+      return jsonError('Please sign in again before using the AI tutor.', 401, 'unauthorized');
     }
 
     const { messages = [], lessonId, courseId } = await req.json();
     const normalizedLessonId = Number.parseInt(String(lessonId || ''), 10);
+    console.info(`[ai/chat ${requestId}] start`, {
+      userId: user.id,
+      courseId,
+      lessonId: normalizedLessonId,
+      messages: Array.isArray(messages) ? messages.length : 0,
+    });
 
     if (!normalizedLessonId || !courseId) {
-      return new Response(JSON.stringify({ error: 'Missing learning context' }), { status: 400 });
+      console.info(`[ai/chat ${requestId}] blocked: missing_context`);
+      return jsonError('Missing learning context for this AI request.', 400, 'missing_context');
     }
 
     const sql = db.getSql();
@@ -105,12 +125,16 @@ export async function POST(req) {
     const messagesSoFar = parseInt(countRes[0].msg_count, 10);
 
     if (messagesSoFar >= limit) {
-       return new Response(
-         JSON.stringify({ 
-           error: 'QUOTA_EXCEEDED', 
-           message: membershipTier === 'free' ? 'You have used your 3 free AI queries for this lesson.' : 'You have reached the maximum 50 AI queries for this lesson.' 
-         }), 
-         { status: 403 }
+       console.info(`[ai/chat ${requestId}] blocked: quota_exceeded`, {
+         userId: user.id,
+         lessonId: normalizedLessonId,
+         messagesSoFar,
+         limit,
+       });
+       return jsonError(
+         membershipTier === 'free' ? 'You have used your 3 free AI queries for this lesson.' : 'You have reached the maximum 50 AI queries for this lesson.',
+         403,
+         'quota_exceeded'
        );
     }
 
@@ -122,14 +146,13 @@ export async function POST(req) {
     const lastUserText = extractMessageText(lastUserMessage);
 
     if (!lastUserText) {
-      return new Response(JSON.stringify({ error: 'Message content is required.' }), { status: 400 });
+      console.info(`[ai/chat ${requestId}] blocked: empty_message`);
+      return jsonError('Message content is required.', 400, 'empty_message');
     }
 
     if (!process.env.OPENAI_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: 'OPENAI_NOT_CONFIGURED', message: 'OPENAI_API_KEY is missing on the server.' }),
-        { status: 500 }
-      );
+      console.info(`[ai/chat ${requestId}] blocked: openai_not_configured`);
+      return jsonError('OPENAI_API_KEY is missing on the server.', 500, 'openai_not_configured');
     }
 
     // 3. Conversation Management (Find or create conversation)
@@ -158,6 +181,11 @@ export async function POST(req) {
     `;
 
     // 5. Generate AI Response
+    console.info(`[ai/chat ${requestId}] calling_openai`, {
+      userId: user.id,
+      conversationId: convId,
+      lessonId: normalizedLessonId,
+    });
     const result = await streamText({
       model: openai('gpt-4o-mini'),
       system: `You are a helpful AI Chinese Mandarin tutor working in the TKU Learning System.
@@ -178,15 +206,23 @@ ${subtitle}
           INSERT INTO ai_messages (conversation_id, user_id, role, content, provider)
           VALUES (${convId}, ${user.id}, 'assistant', ${text}, 'openai')
         `;
+        console.info(`[ai/chat ${requestId}] openai_finished`, {
+          conversationId: convId,
+          chars: String(text || '').length,
+        });
       },
       onError: (error) => {
-        console.error('AI tutor stream error:', error);
+        console.error(`[ai/chat ${requestId}] stream error:`, error);
       },
     });
 
-    return result.toTextStreamResponse();
+    return result.toTextStreamResponse({
+      headers: {
+        'X-AI-Stage': 'openai_stream',
+      },
+    });
   } catch (error) {
-    console.error('Chat API Error:', error);
-    return new Response(JSON.stringify({ error: formatStreamError(error) }), { status: 500 });
+    console.error(`[ai/chat ${requestId}] fatal:`, error);
+    return jsonError(formatStreamError(error), 500, 'chat_error');
   }
 }

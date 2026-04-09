@@ -31,6 +31,7 @@ function serializeViewerForClient(user) {
     name: user.name || '',
     nickname: user.nickname || '',
     avatar_url: user.avatar_url || null,
+    membership_tier: user.membership_tier || 'free',
   };
 }
 
