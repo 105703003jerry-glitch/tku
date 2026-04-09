@@ -1,4 +1,4 @@
-import { convertToModelMessages, streamText } from 'ai';
+import { convertToModelMessages, generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { getAuthUser } from '@/app/lib/authSession';
 import db from '@/api/_lib/db';
@@ -186,7 +186,7 @@ export async function POST(req) {
       conversationId: convId,
       lessonId: normalizedLessonId,
     });
-    const result = await streamText({
+    const result = await generateText({
       model: openai('gpt-4o-mini'),
       system: `You are a helpful AI Chinese Mandarin tutor working in the TKU Learning System.
 You are assisting a student with a specific lesson titled "${lessonTitle}".
@@ -199,26 +199,25 @@ If the student asks something completely unrelated to the lesson or transcript, 
 ${subtitle}
 `,
       messages: convertToModelMessages(messages),
-      onFinish: async ({ text }) => {
-        // Automatically save AI response after stream completes
-        const finishSql = db.getSql();
-        await finishSql`
-          INSERT INTO ai_messages (conversation_id, user_id, role, content, provider)
-          VALUES (${convId}, ${user.id}, 'assistant', ${text}, 'openai')
-        `;
-        console.info(`[ai/chat ${requestId}] openai_finished`, {
-          conversationId: convId,
-          chars: String(text || '').length,
-        });
-      },
-      onError: (error) => {
-        console.error(`[ai/chat ${requestId}] stream error:`, error);
-      },
+    });
+    const text = String(result.text || '').trim() || 'I received your question, but the model returned an empty response. Please try asking again with a little more detail.';
+
+    await sql`
+      INSERT INTO ai_messages (conversation_id, user_id, role, content, provider)
+      VALUES (${convId}, ${user.id}, 'assistant', ${text}, 'openai')
+    `;
+
+    console.info(`[ai/chat ${requestId}] openai_finished`, {
+      conversationId: convId,
+      chars: text.length,
+      finishReason: result.finishReason || 'unknown',
     });
 
-    return result.toTextStreamResponse({
+    return new Response(text, {
+      status: 200,
       headers: {
-        'X-AI-Stage': 'openai_stream',
+        'Content-Type': 'text/plain; charset=utf-8',
+        'X-AI-Stage': 'openai_complete',
       },
     });
   } catch (error) {
