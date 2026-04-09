@@ -64,6 +64,18 @@ export default function AITutorSidebar({ activeLesson, viewer, courseId }) {
       const stage = response.headers.get('x-ai-stage');
       setRequestState(stage ? `AI route: ${stage}` : `AI route status: ${response.status}`);
     },
+    onFinish: ({ message, isAbort, isDisconnect, isError, finishReason }) => {
+      const text = getMessageText(message);
+      const summary = isError
+        ? 'AI finished with stream error'
+        : isDisconnect
+          ? 'AI stream disconnected'
+          : isAbort
+            ? 'AI stream aborted'
+            : 'AI completed';
+
+      setRequestState(`${summary}${text ? `, ${text.length} chars` : ''}${finishReason ? `, reason: ${finishReason}` : ''}`);
+    },
     onError: (chatError) => {
       console.error('AI chat client error:', chatError);
     },
@@ -146,7 +158,13 @@ export default function AITutorSidebar({ activeLesson, viewer, courseId }) {
       )}
 
       <div style={{ padding: '16px', borderTop: '1px solid var(--border-light)', backgroundColor: '#ffffff' }}>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '8px' }}>
+        <form
+          onSubmit={(event) => {
+            setRequestState('Submitting AI request...');
+            handleSubmit(event);
+          }}
+          style={{ display: 'flex', gap: '8px' }}
+        >
           <input
             value={input}
             onChange={handleInputChange}
