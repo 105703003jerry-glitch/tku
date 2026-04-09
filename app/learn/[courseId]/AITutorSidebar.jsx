@@ -51,6 +51,7 @@ function getDisplayError(error) {
 
 export default function AITutorSidebar({ activeLesson, viewer, courseId }) {
   const [requestState, setRequestState] = useState('');
+  const [modelKey, setModelKey] = useState('mini');
 
   const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
     api: '/api/chat',
@@ -59,10 +60,13 @@ export default function AITutorSidebar({ activeLesson, viewer, courseId }) {
     body: {
       lessonId: activeLesson?.id,
       courseId,
+      modelKey,
     },
     onResponse: (response) => {
       const stage = response.headers.get('x-ai-stage');
-      setRequestState(stage ? `AI route: ${stage}` : `AI route status: ${response.status}`);
+      const model = response.headers.get('x-ai-model-key');
+      const stageText = stage ? `AI route: ${stage}` : `AI route status: ${response.status}`;
+      setRequestState(model ? `${stageText}, model: ${model}` : stageText);
     },
     onFinish: ({ message, isAbort, isDisconnect, isError, finishReason }) => {
       const text = getMessageText(message);
@@ -99,12 +103,31 @@ export default function AITutorSidebar({ activeLesson, viewer, courseId }) {
         <div style={{ width: '36px', height: '36px', backgroundColor: 'var(--brand-primary)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
           AI
         </div>
-        <div>
+        <div style={{ flex: 1 }}>
           <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Tutor Assistant</h3>
           <span style={{ fontSize: '0.75rem', color: '#34c759', display: 'flex', alignItems: 'center', gap: '4px' }}>
             <div style={{ width: '6px', height: '6px', backgroundColor: '#34c759', borderRadius: '50%' }} /> Online
           </span>
         </div>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.72rem', color: '#64748b' }}>
+          Model
+          <select
+            value={modelKey}
+            onChange={(event) => setModelKey(event.target.value)}
+            disabled={isLoading}
+            style={{
+              border: '1px solid #d1d5db',
+              borderRadius: '10px',
+              padding: '6px 10px',
+              backgroundColor: '#ffffff',
+              color: '#111827',
+              fontSize: '0.85rem',
+            }}
+          >
+            <option value="mini">mini</option>
+            <option value="nano">nano</option>
+          </select>
+        </label>
       </div>
 
       <div ref={chatScrollRef} style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>

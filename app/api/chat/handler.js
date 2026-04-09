@@ -6,6 +6,11 @@ import db from '@/api/_lib/db';
 export const runtime = 'nodejs';
 export const maxDuration = 30;
 
+const AI_TUTOR_MODELS = {
+  mini: process.env.OPENAI_AI_TUTOR_MODEL_MINI || 'gpt-4.1-mini',
+  nano: process.env.OPENAI_AI_TUTOR_MODEL_NANO || 'gpt-4.1-nano',
+};
+
 async function ensureAiTutorSchema(sql) {
   await sql`
     ALTER TABLE lessons
@@ -95,13 +100,17 @@ export async function POST(req) {
       return jsonError('Please sign in again before using the AI tutor.', 401, 'unauthorized');
     }
 
-    const { messages = [], lessonId, courseId } = await req.json();
+    const { messages = [], lessonId, courseId, modelKey: rawModelKey } = await req.json();
     const normalizedLessonId = Number.parseInt(String(lessonId || ''), 10);
+    const modelKey = rawModelKey === 'nano' ? 'nano' : 'mini';
+    const modelName = AI_TUTOR_MODELS[modelKey];
     console.info(`[ai/chat ${requestId}] start`, {
       userId: user.id,
       courseId,
       lessonId: normalizedLessonId,
       messages: Array.isArray(messages) ? messages.length : 0,
+      modelKey,
+      modelName,
     });
 
     if (!normalizedLessonId || !courseId) {
@@ -185,9 +194,11 @@ export async function POST(req) {
       userId: user.id,
       conversationId: convId,
       lessonId: normalizedLessonId,
+      modelKey,
+      modelName,
     });
     const result = await generateText({
-      model: openai('gpt-4o-mini'),
+      model: openai(modelName),
       system: `You are a helpful AI Chinese Mandarin tutor working in the TKU Learning System.
 You are assisting a student with a specific lesson titled "${lessonTitle}".
 
@@ -211,6 +222,8 @@ ${subtitle}
       conversationId: convId,
       chars: text.length,
       finishReason: result.finishReason || 'unknown',
+      modelKey,
+      modelName,
     });
 
     return new Response(text, {
@@ -218,6 +231,8 @@ ${subtitle}
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
         'X-AI-Stage': 'openai_complete',
+        'X-AI-Model-Key': modelKey,
+        'X-AI-Model-Name': modelName,
       },
     });
   } catch (error) {
