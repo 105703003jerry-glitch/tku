@@ -184,10 +184,7 @@ ${subtitle}
       },
     });
 
-    return result.toUIMessageStreamResponse({
-      originalMessages: messages,
-      onError: (error) => formatStreamError(error),
-    });
+    return result.toTextStreamResponse();
   } catch (error) {
     console.error('Chat API Error:', error);
     return new Response(JSON.stringify({ error: formatStreamError(error) }), { status: 500 });
