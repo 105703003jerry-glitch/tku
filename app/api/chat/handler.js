@@ -198,7 +198,7 @@ If the student asks something completely unrelated to the lesson or transcript, 
 ***TRANSCRIPT DATA***
 ${subtitle}
 `,
-      messages: convertToModelMessages(messages),
+      messages: await convertToModelMessages(messages),
     });
     const text = String(result.text || '').trim() || 'I received your question, but the model returned an empty response. Please try asking again with a little more detail.';
 
