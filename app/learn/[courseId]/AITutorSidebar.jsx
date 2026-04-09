@@ -41,6 +41,7 @@ function getMessageText(message) {
 export default function AITutorSidebar({ activeLesson, viewer, courseId }) {
   const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
     api: '/api/chat',
+    streamProtocol: 'text',
     body: {
       lessonId: activeLesson?.id,
       courseId,
