@@ -3,6 +3,7 @@ import { openai } from '@ai-sdk/openai';
 import { getAuthUser } from '@/app/lib/authSession';
 import db from '@/api/_lib/db';
 
+export const runtime = 'edge';
 export const maxDuration = 30;
 
 export async function POST(req) {
