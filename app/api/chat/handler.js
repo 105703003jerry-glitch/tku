@@ -55,6 +55,26 @@ function extractMessageText(message) {
   return '';
 }
 
+function formatStreamError(error) {
+  const rawMessage = typeof error?.message === 'string'
+    ? error.message
+    : (typeof error === 'string' ? error : 'AI tutor request failed.');
+
+  if (/api key/i.test(rawMessage) || /incorrect api key/i.test(rawMessage) || /invalid api key/i.test(rawMessage)) {
+    return 'OpenAI API key is invalid or unavailable on the server.';
+  }
+
+  if (/quota/i.test(rawMessage) || /rate limit/i.test(rawMessage) || /429/.test(rawMessage)) {
+    return 'OpenAI quota or rate limit was reached. Please try again later.';
+  }
+
+  if (/model/i.test(rawMessage) && /not found|access|permission/i.test(rawMessage)) {
+    return 'The configured OpenAI model is not available for this API account.';
+  }
+
+  return rawMessage;
+}
+
 export async function POST(req) {
   try {
     const user = await getAuthUser();
@@ -158,12 +178,18 @@ ${subtitle}
           INSERT INTO ai_messages (conversation_id, user_id, role, content, provider)
           VALUES (${convId}, ${user.id}, 'assistant', ${text}, 'openai')
         `;
-      }
+      },
+      onError: (error) => {
+        console.error('AI tutor stream error:', error);
+      },
     });
 
-    return result.toDataStreamResponse();
+    return result.toUIMessageStreamResponse({
+      originalMessages: messages,
+      onError: (error) => formatStreamError(error),
+    });
   } catch (error) {
     console.error('Chat API Error:', error);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500 });
+    return new Response(JSON.stringify({ error: formatStreamError(error) }), { status: 500 });
   }
 }
