@@ -401,7 +401,22 @@ export async function updateCourseDetails(formData) {
       WHERE id = ${id}
       LIMIT 1
     `;
-    const coverPayload = await resolveCourseCoverPayload(formData, id, currentCourseRows[0] || null);
+    const currentCourse = currentCourseRows[0] || null;
+    let coverPayload = {
+      coverImageSource: currentCourse?.cover_image_source || 'youtube',
+      coverImageUrl: currentCourse?.cover_image_url || null,
+      coverPresetKey: currentCourse?.cover_preset_key || null,
+      coverImageWidth: currentCourse?.cover_image_width || null,
+      coverImageHeight: currentCourse?.cover_image_height || null,
+    };
+    let coverError = null;
+
+    try {
+      coverPayload = await resolveCourseCoverPayload(formData, id, currentCourse);
+    } catch (coverUploadError) {
+      coverError = coverUploadError?.message || 'Cover image upload failed.';
+      console.error('Course cover update warning:', coverUploadError);
+    }
     
     // Update courses table
     await sql`
@@ -436,9 +451,14 @@ export async function updateCourseDetails(formData) {
     revalidatePath('/courses');
     revalidatePath('/dashboard');
     revalidatePath(`/learn/${id}`);
-    redirectPath = `/admin/courses/${id}?saved=1`;
+    redirectPath = coverError
+      ? `/admin/courses/${id}?saved=1&coverError=${encodeURIComponent(coverError)}`
+      : `/admin/courses/${id}?saved=1`;
   } catch (err) {
     console.error("Update Course Error:", err);
+    if (formData.get('courseId')) {
+      redirect(`/admin/courses/${formData.get('courseId')}?error=${encodeURIComponent(err.message || 'Unable to save course settings.')}`);
+    }
     return { success: false, error: err.message };
   }
 

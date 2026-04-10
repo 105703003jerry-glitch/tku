@@ -16,6 +16,8 @@ export default async function AdminCourseDetails({ params, searchParams }) {
   const resolvedSearchParams = await searchParams;
   const { courseId } = resolvedParams;
   const saved = resolvedSearchParams?.saved === '1';
+  const saveError = typeof resolvedSearchParams?.error === 'string' ? resolvedSearchParams.error : null;
+  const coverError = typeof resolvedSearchParams?.coverError === 'string' ? resolvedSearchParams.coverError : null;
   let course = null;
   let lessons = [];
   let modules = [];
@@ -78,6 +80,18 @@ export default async function AdminCourseDetails({ params, searchParams }) {
       {saved && (
         <div style={{ marginBottom: '20px', padding: '12px 14px', borderRadius: '10px', border: '1px solid #bbf7d0', backgroundColor: '#f0fdf4', color: '#166534', fontSize: '0.88rem', fontWeight: 500 }}>
           Course settings updated successfully.
+        </div>
+      )}
+
+      {coverError && (
+        <div style={{ marginBottom: '20px', padding: '12px 14px', borderRadius: '10px', border: '1px solid #fde68a', backgroundColor: '#fffbeb', color: '#92400e', fontSize: '0.88rem', fontWeight: 500 }}>
+          Course settings were saved, but the cover image was not updated: {coverError}
+        </div>
+      )}
+
+      {saveError && (
+        <div style={{ marginBottom: '20px', padding: '12px 14px', borderRadius: '10px', border: '1px solid #fecaca', backgroundColor: '#fef2f2', color: '#991b1b', fontSize: '0.88rem', fontWeight: 500 }}>
+          Unable to save course settings: {saveError}
         </div>
       )}
 
